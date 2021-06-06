@@ -5,13 +5,13 @@ const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/dark-v10',
     center: [0, 0],
-    zoom: 13
+    zoom: 10
 });
 
 map.on('load', function () {
     const files = [
         './data/1234.gpx',
-    ];
+    ]; //.slice(0, 50);
 
     console.log(`Loading ${files.length} files...`);
     const promises = files.map((f) => loadFromGpx(f));
@@ -51,67 +51,38 @@ function init(geojson) {
             'id': 'track-heat',
             'type': 'heatmap',
             'source': 'track',
-            'maxzoom': 15,
+            // 'maxzoom': 23,
             'paint': {
-                // TODO : interpolate based on Zoom?
+                // This is based on how many points we skip when parsing the GPX files
                 'heatmap-weight': 0.002,
-                // 'heatmap-weight': [
-                //     'interpolate',
-                //     ['linear'],
-                //     ['zoom'],
-                //     0,
-                //     0.001,
-                //     13,
-                //     0.001,
-                //     15,
-                //     0.01
-                // ],
-                // // Transition from heatmap to circle layer by zoom level
-                // 'heatmap-opacity': [
-                //     'interpolate',
-                //     ['linear'],
-                //     ['zoom'],
-                //     7,
-                //     1,
-                //     9,
-                //     0
-                // ]
-                // 'heatmap-radius': [
-                //     'interpolate',
-                //     ['linear'],
-                //     ['zoom'],
-                //     0,
-                //     10,
-                //     13,
-                //     20,
-                //     15,
-                //     30
-                // ],
+                'heatmap-intensity': [
+                    'interpolate', ['exponential', 2], ['zoom'], 0, 0.6, 15, 4, 20, 5, 23, 10
+                ]
             }
         },
         'waterway-label'
     );
 
-    // map.addLayer(
-    //     {
-    //         'id': 'track-point',
-    //         'type': 'circle',
-    //         'source': 'track',
-    //         'minzoom': 10,
-    //         'paint': {
-    //             // Radius based on zoom level
-    //             'circle-radius': [
-    //                 'interpolate', ['linear'], ['zoom'], 10, 0.1, 16, 5
-    //             ],
-    //             'circle-color': 'rgba(255,255,255,1)',
-    //             'circle-stroke-color': 'rgba(0,0,0,0)',
-    //             'circle-stroke-width': 1,
-    //             // Transition from heatmap to circle layer based on zoom level
-    //             'circle-opacity': [
-    //                 'interpolate', ['linear'], ['zoom'], 10, 0, 14, 0.1, 16, 1
-    //             ]
-    //         }
-    //     },
-    //     'waterway-label'
-    // );
+    map.addLayer(
+        {
+            'id': 'track-point',
+            'type': 'circle',
+            'source': 'track',
+            'minzoom': 10,
+            'paint': {
+                // Radius based on zoom level
+                'circle-radius': [
+                    'interpolate', ['linear'], ['zoom'], 10, 0, 18, 5, 23, 10
+                ],
+                'circle-color': 'rgba(255,255,255,1)',
+                'circle-stroke-color': 'rgba(0,0,0,0)',
+                'circle-stroke-width': 1,
+                // Show raw data points progressively as we zoom
+                'circle-opacity': [
+                    'interpolate', ['linear'], ['zoom'], 10, 0, 18, 0.2, 23, 1
+                ]
+            }
+        },
+        'waterway-label'
+    );
 }
