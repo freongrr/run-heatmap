@@ -1,0 +1,35 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+}
+
+#map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+}
+
+#loadOverlay {
+    width: 100%;
+    position: absolute;
+}
+
+#loadOverlay div {
+    width: 300px;
+    margin: 10em auto;
+    text-align: center;
+    background-color: white;
+    border: 1px solid black;
+    padding: 1em;
+}
+
+#mapControls {
+    display: none;
+    position: absolute;
+    width: 300px;
+    background-color: white;
+    border: 1px solid black;
+    padding: 0.5em;
+}

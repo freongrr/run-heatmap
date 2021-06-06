@@ -1,5 +1,3 @@
-const SKIP_COUNT = 4;
-
 function loadFromGpx(url /* string */) {
     return fetch(url)
         .then((r) => r.text())
@@ -21,13 +19,9 @@ function doConvert(data, fileName) {
         .getElementsByTagName('trkseg')[0]
         .getElementsByTagName('trkpt');
 
-    const convertedPoints = [...pointElements]
-        .filter((p, i) => i % SKIP_COUNT === 0)
-        .map((p) => toFeature(p));
-
     return {
         'type': 'FeatureCollection',
-        'features': convertedPoints,
+        'features': [...pointElements].map((p) => toFeature(p)),
         '_fileName': fileName,
         "_trackType": getChildElementValue(trackElement, 'type')
     };

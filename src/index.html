@@ -6,26 +6,37 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
     <link href="./lib/http_api.mapbox.com_mapbox-gl-js_v2.3.0_mapbox-gl.css" rel="stylesheet">
     <script src="./lib/http_api.mapbox.com_mapbox-gl-js_v2.3.0_mapbox-gl.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
-
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-        }
-    </style>
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
 <div id="map"></div>
 
+<div id="loadOverlay">
+    <div>Loading...</div>
+</div>
+
+<div id="mapControls">
+    <span>
+        <select id="samplingSelect">
+            <option value="2">2</option>
+            <option value="4">4</option>
+            <option value="8" selected>8</option>
+            <option value="16">16</option>
+            <option value="32">32</option>
+            <option value="64">64</option>
+        </select>
+        <label for="samplingSelect">Data sampling</label>
+    </span>
+    <span>
+        <input type="checkbox" id="showPointsCheckbox" checked/>
+        <label for="showPointsCheckbox">Show track points</label>
+    </span>
+</div>
+
 <script src="./map.js"></script>
 <script src="./gpxConverter.js"></script>
+<script src="./mapControls.js"></script>
 
 </body>
 </html>
