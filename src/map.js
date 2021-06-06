@@ -18,9 +18,17 @@ map.on('load', function () {
 
     Promise.all(promises)
         .then((data) => {
-            const merged = data[0];
+            let merged = null;
             for (let i = 1; i < data.length; i++) {
-                merged.features.push(...data[i].features);
+                const datum = data[i];
+                // Only type 9 (Run)
+                if (datum._trackType === "9") {
+                    if (merged === null) {
+                        merged = data[i];
+                    } else {
+                        merged.features.push(...datum.features);
+                    }
+                }
             }
             init(merged);
             console.log(`Loaded ${merged.features.length} points`);
