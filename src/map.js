@@ -14,6 +14,7 @@ const LAYER_TRACK = 'track-point';
 class MapWrapper {
     data = [];
     skipCount = 8;
+    yearFilter = null;
     onLoadFilesStart = NO_OP;
     onLoadFilesFinish = NO_OP;
 
@@ -106,6 +107,11 @@ class MapWrapper {
             });
     }
 
+    setYearFilter(year) {
+        this.yearFilter = year;
+        this.refreshData();
+    }
+
     setDataSampling(value) {
         this.skipCount = value;
         this.refreshData();
@@ -123,14 +129,23 @@ class MapWrapper {
 
     refreshData() {
         const features = [];
-        // Only type 9 (Run)
-        this.data.filter((d) => d._trackType === "9")
+        this.data
+            // Only type 9 (Run)
+            .filter((d) => d._trackType === 9)
+            // Only current year or all
+            .filter((d) => {
+                if (this.yearFilter === null) {
+                    return true;
+                } else {
+                    return d._time.startsWith(this.yearFilter + '-');
+                }
+            })
             .forEach((d) => {
                 const batch = [];
                 for (let i = 0; i < d.features.length; i++) {
                     batch.push(d.features[i]);
                     if (batch.length === this.skipCount || i === d.features.length - 1) {
-                        features.push(this.xxxx(batch));
+                        features.push(this.batchToPoint(batch));
                         batch.splice(0, batch.length);
                     }
                 }
@@ -144,14 +159,14 @@ class MapWrapper {
             });
     }
 
-    xxxx(batch) {
+    batchToPoint(batch) {
         // This only keeps 1 point out of X
         // This actually works better than using the average
         return batch[0];
 
         // This averages the coordinates of X points
-        // const lon = batch.map(p => +p.geometry.coordinates[0]).reduce((p, v) => p + v, 0) / batch.length;
-        // const lat = batch.map(p => +p.geometry.coordinates[1]).reduce((p, v) => p + v, 0) / batch.length;
+        // const lon = batch.map(p => p.geometry.coordinates[0]).reduce((p, v) => p + v, 0) / batch.length;
+        // const lat = batch.map(p => p.geometry.coordinates[1]).reduce((p, v) => p + v, 0) / batch.length;
         // return {
         //     'type': 'Feature',
         //     'geometry': {

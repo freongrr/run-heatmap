@@ -28,8 +28,11 @@ body {
 #mapControls {
     display: none;
     position: absolute;
-    width: 300px;
     background-color: white;
     border: 1px solid black;
     padding: 0.5em;
+}
+
+#mapControls .control {
+    margin-right: 1em;
 }

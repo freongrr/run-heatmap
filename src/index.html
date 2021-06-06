@@ -17,7 +17,14 @@
 </div>
 
 <div id="mapControls">
-    <span>
+    <span class="control">
+        <label for="yearSelect">Year:</label>
+        <select id="yearSelect">
+            <option value="" selected>All</option>
+        </select>
+    </span>
+    <span class="control">
+        <label for="samplingSelect">Data sampling:</label>
         <select id="samplingSelect">
             <option value="2">2</option>
             <option value="4">4</option>
@@ -26,9 +33,8 @@
             <option value="32">32</option>
             <option value="64">64</option>
         </select>
-        <label for="samplingSelect">Data sampling</label>
     </span>
-    <span>
+    <span class="control">
         <input type="checkbox" id="showPointsCheckbox" checked/>
         <label for="showPointsCheckbox">Show track points</label>
     </span>

@@ -12,8 +12,13 @@ function doConvert(data, fileName) {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(data, 'text/xml');
 
-    const trackElement = xmlDoc.getElementsByTagName('gpx')[0]
-        .getElementsByTagName('trk')[0];
+    const rootElement = xmlDoc.getElementsByTagName('gpx')[0];
+
+    const metadataElement = rootElement.getElementsByTagName('metadata')[0];
+    const timeString = getChildElementValue(metadataElement, 'time');
+
+    const trackElement = rootElement.getElementsByTagName('trk')[0];
+    const typeId = +getChildElementValue(trackElement, 'type');
 
     const pointElements = trackElement
         .getElementsByTagName('trkseg')[0]
@@ -23,22 +28,19 @@ function doConvert(data, fileName) {
         'type': 'FeatureCollection',
         'features': [...pointElements].map((p) => toFeature(p)),
         '_fileName': fileName,
-        "_trackType": getChildElementValue(trackElement, 'type')
+        '_time': timeString,
+        "_trackType": typeId
     };
 }
 
 function toFeature(element /* Element */) {
-    // TODO : skip / merge points and give them a higher weight?
     return {
         'type': 'Feature',
         'geometry': {
             'type': 'Point',
-            // 'properties': {
-            //     'weight': 1
-            // },
             'coordinates': [
-                element.getAttribute('lon'),
-                element.getAttribute('lat'),
+                +element.getAttribute('lon'),
+                +element.getAttribute('lat'),
                 0.0
             ]
         }
