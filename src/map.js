@@ -55,6 +55,9 @@ class MapWrapper {
                 'paint': {
                     // This is based on how many points we skip when parsing the GPX files
                     'heatmap-weight': getHeatmapWeight(this.skipCount),
+                    // 'heatmap-weight': [
+                    //     'interpolate', ['linear'], ['get', 'weight'], 0, 0.002, 1000, 1
+                    // ],
                     'heatmap-intensity': [
                         'interpolate', ['exponential', 2], ['zoom'], 0, 0.6, 15, 4, 20, 5, 23, 10
                     ]
@@ -75,6 +78,7 @@ class MapWrapper {
                     // Radius based on zoom level
                     'circle-radius': [
                         'interpolate', ['linear'], ['zoom'], 10, 0, 18, 5, 23, 10
+                        // 'interpolate', ['linear'], ['get', 'weight'], 0, 1, 1000, 20
                     ],
                     'circle-color': 'rgba(255,255,255,1)',
                     'circle-stroke-color': 'rgba(0,0,0,0)',
@@ -134,21 +138,10 @@ class MapWrapper {
             .filter((d) => d._trackType === 9)
             // Only current year or all
             .filter((d) => {
-                if (this.yearFilter === null) {
-                    return true;
-                } else {
-                    return d._time.startsWith(this.yearFilter + '-');
-                }
+                return this.yearFilter === null || d._time.startsWith(this.yearFilter + '-');
             })
             .forEach((d) => {
-                const batch = [];
-                for (let i = 0; i < d.features.length; i++) {
-                    batch.push(d.features[i]);
-                    if (batch.length === this.skipCount || i === d.features.length - 1) {
-                        features.push(this.batchToPoint(batch));
-                        batch.splice(0, batch.length);
-                    }
-                }
+                features.push(...d.features.filter((p, i) => i % this.skipCount === 0));
             });
 
         console.log(`Rendering ${features.length} features`);
@@ -159,22 +152,59 @@ class MapWrapper {
             });
     }
 
-    batchToPoint(batch) {
-        // This only keeps 1 point out of X
-        // This actually works better than using the average
-        return batch[0];
+    /**
+     * Merge points that are very close and bump their weight.
+     *
+     * This is an alternative to batching, but it causes other problems.
+     */
+    aggregatePoints(dataCollections) {
+        const indexedFeatures = new Map();
+        dataCollections.forEach((d) => {
+            d.features.forEach((f) => {
+                const [lon, lat] = f.geometry.coordinates;
+                const latCode = toCode((lat + 90) / 180, 4);
+                const lonCode = toCode((lon + 180) / 360, 4);
+                const key = latCode + lonCode;
+                if (!indexedFeatures.has(key)) {
+                    indexedFeatures.set(key, [f]);
+                } else {
+                    indexedFeatures.get(key).push(f);
+                }
+            });
+        });
 
-        // This averages the coordinates of X points
-        // const lon = batch.map(p => p.geometry.coordinates[0]).reduce((p, v) => p + v, 0) / batch.length;
-        // const lat = batch.map(p => p.geometry.coordinates[1]).reduce((p, v) => p + v, 0) / batch.length;
-        // return {
-        //     'type': 'Feature',
-        //     'geometry': {
-        //         'type': 'Point',
-        //         'coordinates': [lon, lat, 0.0]
-        //     }
-        // };
+        const features = [];
+        indexedFeatures.forEach((points) => {
+            features.push(this.createAveragePoint(points));
+        });
+        return features;
     }
+
+    createAveragePoint(batch) {
+        // This averages the coordinates of X points
+        const lon = batch.map(p => p.geometry.coordinates[0]).reduce((p, v) => p + v, 0) / batch.length;
+        const lat = batch.map(p => p.geometry.coordinates[1]).reduce((p, v) => p + v, 0) / batch.length;
+        return {
+            'type': 'Feature',
+            'properties': {
+                'weight': batch.length
+            },
+            'geometry': {
+                'type': 'Point',
+                'coordinates': [lon, lat, 0.0]
+            }
+        };
+    }
+}
+
+function toCode(n, length) {
+    const r = Math.ceil(Math.pow(26, length) * n);
+    let code = '';
+    for (let i = 0; i < length; i++) {
+        const o = Math.ceil(r / Math.pow(26, length - 1 - i)) % 26;
+        code += String.fromCharCode(65 + o);
+    }
+    return code;
 }
 
 function getHeatmapWeight(skipCount) {
