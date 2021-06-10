@@ -29,7 +29,7 @@ document.getElementById('samplingSelect')
         mapWrapper.setDataSampling(+e.target.value);
     });
 
-document.getElementById('showPointsCheckbox')
+document.getElementById('showRawDataCheckbox')
     .addEventListener('change', (e) => {
         mapWrapper.setShowTracks(e.target.checked);
     });

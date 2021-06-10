@@ -26,24 +26,21 @@ function doConvert(data, fileName) {
 
     return {
         'type': 'FeatureCollection',
-        'features': [...pointElements].map((p) => toFeature(p)),
+        'features': [{
+            'type': 'Feature',
+            'geometry': {
+                'type': 'LineString',
+                'coordinates': [...pointElements].map((e) => {
+                    return [
+                        +e.getAttribute('lon'),
+                        +e.getAttribute('lat')
+                    ];
+                })
+            }
+        }],
         '_fileName': fileName,
         '_time': timeString,
         "_trackType": typeId
-    };
-}
-
-function toFeature(element /* Element */) {
-    return {
-        'type': 'Feature',
-        'geometry': {
-            'type': 'Point',
-            'coordinates': [
-                +element.getAttribute('lon'),
-                +element.getAttribute('lat'),
-                0.0
-            ]
-        }
     };
 }
 
