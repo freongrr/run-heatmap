@@ -4,13 +4,18 @@ const mapControls = document.getElementById('mapControls');
 const mapWrapper = new MapWrapper();
 
 mapWrapper.onLoadFilesStart = () => {
+    loadingOverlay.innerText = 'Loading...';
     loadingOverlay.style.display = 'block';
     mapControls.style.display = 'none';
 };
 
-mapWrapper.onLoadFilesFinish = () => {
-    loadingOverlay.style.display = 'none';
-    mapControls.style.display = 'block';
+mapWrapper.onLoadFilesFinish = (e) => {
+    if (e) {
+        loadingOverlay.innerText = 'Error: ' + e.toString();
+    } else {
+        loadingOverlay.style.display = 'none';
+        mapControls.style.display = 'block';
+    }
 };
 
 /* Year Filter */

@@ -10,6 +10,7 @@ const NO_OP = () => {
 
 const SOURCE_POINTS = 'points';
 const SOURCE_LINES = 'tracks';
+const SOURCE_DISTANCE_CIRCLES = 'distanceCircles';
 const LAYER_HEATMAP = 'points-heatmap';
 const LAYER_TRACK_POINTS = 'tracks-points';
 const LAYER_TRACK_LINES = 'tracks-lines';
@@ -18,6 +19,8 @@ const EMPTY_FEATURE_COLLECTION = {
     type: "FeatureCollection",
     features: []
 };
+
+const CENTER = [0, 0];
 
 class MapWrapper {
     data = [];
@@ -35,7 +38,7 @@ class MapWrapper {
         this.map = new mapboxgl.Map({
             container: containerId,
             style: 'mapbox://styles/mapbox/dark-v10',
-            center: [0, 0],
+            center: CENTER,
             zoom: 12
         });
 
@@ -113,7 +116,30 @@ class MapWrapper {
         );
 
         // Hide points by default
-        this.map.setLayoutProperty(LAYER_TRACK_POINTS, 'visibility','none');
+        this.map.setLayoutProperty(LAYER_TRACK_POINTS, 'visibility', 'none');
+
+        // Add circles at 5km and 10km
+        this.map.addSource(SOURCE_DISTANCE_CIRCLES, {
+            type: 'geojson',
+            data: {
+                type: "FeatureCollection",
+                features: [
+                    turf.circle(CENTER, 5, {steps: 36, units: 'kilometers'}),
+                    turf.circle(CENTER, 10, {steps: 36, units: 'kilometers'}),
+                ]
+            }
+        });
+
+        this.map.addLayer({
+            id: 'circle-fill',
+            type: 'line',
+            source: SOURCE_DISTANCE_CIRCLES,
+            paint: {
+                'line-color': 'yellow',
+                'line-opacity': 1,
+                'line-width': 2
+            },
+        });
     }
 
     loadFiles() {
@@ -129,8 +155,12 @@ class MapWrapper {
             .then((data) => {
                 this.data = data;
                 this.onLoadFilesFinish();
-                console.log('Load complete');
                 this.refreshData();
+                console.log('Load complete');
+            })
+            .catch((e) => {
+                console.error('Loading failed', e);
+                this.onLoadFilesFinish(e);
             });
     }
 
@@ -186,7 +216,7 @@ class MapWrapper {
                         })
                         .forEach((c) => {
                             const [lon, lat] = c;
-                            lineFeature.geometry.coordinates.push( [lon, lat]);
+                            lineFeature.geometry.coordinates.push([lon, lat]);
                             pointFeatures.push({
                                 'type': 'Feature',
                                 'geometry': {
