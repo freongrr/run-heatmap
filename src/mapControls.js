@@ -1,20 +1,47 @@
 const loadingOverlay = document.getElementById('loadOverlay');
 const mapControls = document.getElementById('mapControls');
+const selectedTracks = document.getElementById('selectedTracks');
 
 const mapWrapper = new MapWrapper();
 
 mapWrapper.onLoadFilesStart = () => {
-    loadingOverlay.innerText = 'Loading...';
     loadingOverlay.style.display = 'block';
     mapControls.style.display = 'none';
 };
 
 mapWrapper.onLoadFilesFinish = (e) => {
-    if (e) {
-        loadingOverlay.innerText = 'Error: ' + e.toString();
+    loadingOverlay.style.display = 'none';
+    mapControls.style.display = 'block';
+};
+
+mapWrapper.onSelection = (features) => {
+    while (selectedTracks.children.length > 0) {
+        selectedTracks.removeChild(selectedTracks.children[0]);
+    }
+
+    const titleElement = document.createElement('h2');
+    if (features.length > 1) {
+        titleElement.innerText = `${features.length} tracks selected`;
     } else {
-        loadingOverlay.style.display = 'none';
-        mapControls.style.display = 'block';
+        titleElement.innerText = `${features.length} track selected`;
+    }
+    selectedTracks.appendChild(titleElement);
+
+    //features.sort((a, b) => +a.properties.trackId - +b.properties.trackId);
+    for (let i = 0; i < Math.min(10, features.length); i++) {
+        const f = features[i];
+        const divElement = document.createElement('div');
+        const aElement = document.createElement('a');
+        aElement.innerText = `${f.properties.description} (${formatTime(f.properties.time)})`;
+        aElement.href = 'https://www.strava.com/activities/' + f.properties.trackId;
+        divElement.appendChild(aElement);
+        selectedTracks.appendChild(divElement);
+    }
+    // Hide/show the block
+    if (features.length === 0) {
+        selectedTracks.style.display = 'none';
+    } else {
+        selectedTracks.style.display = 'block';
     }
 };
 
@@ -61,4 +88,10 @@ function addSelectOption(selectElement, value, label, selected) {
         optionElement.selected = selected;
     }
     selectElement.appendChild(optionElement);
+}
+
+function formatTime(timeString) {
+    // Raw format: 2014-12-07T05:54:07Z)
+    // TODO : better format including local time?
+    return timeString.substring(0, 10)
 }

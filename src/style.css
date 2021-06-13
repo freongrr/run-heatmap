@@ -4,6 +4,10 @@ body {
     font-family: sans-serif;
 }
 
+a, a:visited {
+    color: #008
+}
+
 #map {
     position: absolute;
     top: 0;
@@ -35,4 +39,22 @@ body {
 
 #mapControls .control {
     margin-right: 1em;
+}
+
+#selectedTracks {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    border: 1px solid black;
+    padding: 0.5em;
+}
+
+#selectedTracks h2 {
+    margin: 0 0 0.5em 0;
+    font-size: larger;
+}
+
+#selectedTracks > div {
+    line-height: 1em;
 }

@@ -19,6 +19,7 @@ function doConvert(data, fileName) {
 
     const trackElement = rootElement.getElementsByTagName('trk')[0];
     const typeId = +getChildElementValue(trackElement, 'type');
+    const description = getChildElementValue(trackElement, 'name');
 
     const pointElements = trackElement
         .getElementsByTagName('trkseg')[0]
@@ -29,7 +30,9 @@ function doConvert(data, fileName) {
         features: [{
             type: 'Feature',
             properties: {
-                trackId: fileName.replace('.gpx', '')
+                trackId: fileName.replace('.gpx', ''),
+                description: description,
+                time: timeString
             },
             geometry: {
                 type: 'LineString',
@@ -41,8 +44,7 @@ function doConvert(data, fileName) {
                 })
             }
         }],
-        // TODO : move to properties of the feature
-        _fileName: fileName,
+        // TODO : use the properties of the feature
         _time: timeString,
         _trackType: typeId
     };

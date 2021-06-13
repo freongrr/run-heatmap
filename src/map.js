@@ -10,7 +10,6 @@ const NO_OP = () => {
 
 const SOURCE_POINTS = 'points';
 const SOURCE_LINES = 'tracks';
-const SOURCE_LINES_HIGHLIGHTED = 'tracks-hl';
 const SOURCE_DISTANCE_CIRCLES = 'distanceCircles';
 const LAYER_HEATMAP = 'points-heatmap';
 const LAYER_TRACK_POINTS = 'tracks-points';
@@ -31,6 +30,7 @@ class MapWrapper {
     yearFilter = null;
     onLoadFilesStart = NO_OP;
     onLoadFilesFinish = NO_OP;
+    onSelection = NO_OP;
 
     constructor() {
         // Nothing (for now?)
@@ -59,11 +59,6 @@ class MapWrapper {
         });
 
         this.map.addSource(SOURCE_LINES, {
-            'type': 'geojson',
-            'data': EMPTY_FEATURE_COLLECTION
-        });
-
-        this.map.addSource(SOURCE_LINES_HIGHLIGHTED, {
             'type': 'geojson',
             'data': EMPTY_FEATURE_COLLECTION
         });
@@ -129,7 +124,7 @@ class MapWrapper {
             {
                 'id': LAYER_TRACK_LINES_HIGHLIGHTED,
                 'type': 'line',
-                'source': SOURCE_LINES_HIGHLIGHTED,
+                'source': SOURCE_LINES,
                 'minzoom': 10,
                 'paint': {
                     'line-color': '#FFF',
@@ -139,38 +134,26 @@ class MapWrapper {
             }
         );
 
-        // There are at least 3 ways we can highlight tracks:
-        // 1. using setFeatureState
-        //    pro: only 1 layer
-        //    con: makes it more difficult to style using case
-        // 2. using setFilter
-        //    pro: very flexible
-        //    con: needs an extra layer
-        // 3. using setData
-        //    pro: easy to highlight multiple tracks
-        //    con: needs an extra source and an extra layer
-
         this.map.on('click', LAYER_TRACK_LINES, (e) => {
             if (e.features.length > 0) {
                 e.preventDefault();
-
-                const eventIds = e.features.map((f) => f.properties.trackId);
-                console.info('Track ids:\n' + eventIds.map((i) => " - " + i).join('\n'));
-                const matchingFeatures = this.map.getSource(SOURCE_LINES)._data.features
-                    .filter((f) => eventIds.includes(f.properties.trackId));
-                console.info('Matched:\n' + matchingFeatures.map((f) => " - " + f.properties.trackId).join('\n'));
-
-                this.map.getSource(SOURCE_LINES_HIGHLIGHTED)
-                    .setData({type: "FeatureCollection", features: matchingFeatures});
+                const trackIds = e.features.map((f) => f.properties.trackId);
+                console.info('Highlighting tracks: ' + trackIds);
+                this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId', ...trackIds]);
+                this.onSelection(e.features);
             }
         });
 
         this.map.on('click', (e) => {
-            // HACK - this is not in the API, but I can use that to prevent reset the data when clicking on a track
+            // HACK - this is not in the API
             if (!e._defaultPrevented) {
-                this.map.getSource(SOURCE_LINES_HIGHLIGHTED).setData(EMPTY_FEATURE_COLLECTION);
+                this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId']);
+                this.onSelection([]);
             }
         });
+
+        // Empty filter initially
+        this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId']);
 
         // Change the cursor when moving over a track
         this.map.on('mousemove', LAYER_TRACK_LINES, () => this.map.getCanvas().style.cursor = 'pointer');
