@@ -29,7 +29,7 @@ function doConvert(data, fileName) {
         features: [{
             type: 'Feature',
             properties: {
-                id: fileName.replace('.gpx', '')
+                trackId: fileName.replace('.gpx', '')
             },
             geometry: {
                 type: 'LineString',

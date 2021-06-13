@@ -24,8 +24,6 @@ const EMPTY_FEATURE_COLLECTION = {
 
 const CENTER = [0, 0];
 
-const NOT_A_REAL_ID = '__NOT_A_REAL_ID';
-
 class MapWrapper {
     data = [];
     skipCount = 8;
@@ -41,7 +39,9 @@ class MapWrapper {
     init(containerId) {
         this.map = new mapboxgl.Map({
             container: containerId,
+            // TODO : drop down to change style
             style: 'mapbox://styles/mapbox/dark-v10',
+            // style: 'mapbox://styles/mapbox/satellite-v9',
             center: CENTER,
             zoom: 12
         });
@@ -153,13 +153,15 @@ class MapWrapper {
         this.map.on('click', LAYER_TRACK_LINES, (e) => {
             if (e.features.length > 0) {
                 e.preventDefault();
-                console.info('Highlighting:\n' + e.features.map((f) => " - " + f.properties.id).join('\n'));
-                // TODO : setData includes a partial line!
-                // we should either:
-                // - lookup the real track in the source
-                // - use set filter
+
+                const eventIds = e.features.map((f) => f.properties.trackId);
+                console.info('Track ids:\n' + eventIds.map((i) => " - " + i).join('\n'));
+                const matchingFeatures = this.map.getSource(SOURCE_LINES)._data.features
+                    .filter((f) => eventIds.includes(f.properties.trackId));
+                console.info('Matched:\n' + matchingFeatures.map((f) => " - " + f.properties.trackId).join('\n'));
+
                 this.map.getSource(SOURCE_LINES_HIGHLIGHTED)
-                    .setData({type: "FeatureCollection", features: [...e.features]});
+                    .setData({type: "FeatureCollection", features: matchingFeatures});
             }
         });
 
