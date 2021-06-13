@@ -22,6 +22,7 @@ const EMPTY_FEATURE_COLLECTION = {
 class MapWrapper {
     data = [];
     skipCount = 8;
+    rawDataMode = 'Tracks';
     yearFilter = null;
     onLoadFilesStart = NO_OP;
     onLoadFilesFinish = NO_OP;
@@ -72,28 +73,25 @@ class MapWrapper {
         );
 
         // Tracks as points
-        // this.map.addLayer(
-        //     {
-        //         'id': LAYER_TRACK_POINTS,
-        //         'type': 'circle',
-        //         'source': SOURCE_POINTS,
-        //         'minzoom': 10,
-        //         'paint': {
-        //             // Radius based on zoom level
-        //             'circle-radius': [
-        //                 'interpolate', ['linear'], ['zoom'], 10, 0, 18, 5, 23, 10
-        //                 // 'interpolate', ['linear'], ['get', 'weight'], 0, 1, 1000, 20
-        //             ],
-        //             'circle-color': 'rgba(255,255,255,1)',
-        //             'circle-stroke-color': 'rgba(0,0,0,0)',
-        //             'circle-stroke-width': 1,
-        //             // Show raw data points progressively as we zoom
-        //             'circle-opacity': [
-        //                 'interpolate', ['linear'], ['zoom'], 10, 0, 18, 0.2, 23, 1
-        //             ]
-        //         }
-        //     }
-        // );
+        this.map.addLayer(
+            {
+                'id': LAYER_TRACK_POINTS,
+                'type': 'circle',
+                'source': SOURCE_POINTS,
+                'minzoom': 10,
+                'paint': {
+                    'circle-radius': [
+                        'interpolate', ['linear'], ['zoom'], 10, 0, 18, 5, 23, 10
+                    ],
+                    'circle-color': 'rgba(255,255,255,1)',
+                    'circle-stroke-color': 'rgba(0,0,0,0)',
+                    'circle-stroke-width': 1,
+                    'circle-opacity': [
+                        'interpolate', ['linear'], ['zoom'], 10, 0, 18, 0.2, 23, 1
+                    ]
+                }
+            }
+        );
 
         // Tracks as lines
         this.map.addLayer(
@@ -113,6 +111,9 @@ class MapWrapper {
                 }
             }
         );
+
+        // Hide points by default
+        this.map.setLayoutProperty(LAYER_TRACK_POINTS, 'visibility','none');
     }
 
     loadFiles() {
@@ -144,11 +145,17 @@ class MapWrapper {
         this.map.setPaintProperty(LAYER_HEATMAP, 'heatmap-weight', getHeatmapWeight(value));
     }
 
-    setShowTracks(visible) {
+    setRawDataRender(value) {
         this.map.setLayoutProperty(
             LAYER_TRACK_LINES,
             'visibility',
-            visible ? 'visible' : 'none'
+            value === 'Tracks' ? 'visible' : 'none'
+        );
+
+        this.map.setLayoutProperty(
+            LAYER_TRACK_POINTS,
+            'visibility',
+            value === 'Points' ? 'visible' : 'none'
         );
     }
 
