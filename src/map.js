@@ -10,10 +10,12 @@ const NO_OP = () => {
 
 const SOURCE_POINTS = 'points';
 const SOURCE_LINES = 'tracks';
+const SOURCE_LINES_HIGHLIGHTED = 'tracks-hl';
 const SOURCE_DISTANCE_CIRCLES = 'distanceCircles';
 const LAYER_HEATMAP = 'points-heatmap';
 const LAYER_TRACK_POINTS = 'tracks-points';
 const LAYER_TRACK_LINES = 'tracks-lines';
+const LAYER_TRACK_LINES_HIGHLIGHTED = 'tracks-lines-hl';
 
 const EMPTY_FEATURE_COLLECTION = {
     type: "FeatureCollection",
@@ -21,6 +23,8 @@ const EMPTY_FEATURE_COLLECTION = {
 };
 
 const CENTER = [0, 0];
+
+const NOT_A_REAL_ID = '__NOT_A_REAL_ID';
 
 class MapWrapper {
     data = [];
@@ -55,6 +59,11 @@ class MapWrapper {
         });
 
         this.map.addSource(SOURCE_LINES, {
+            'type': 'geojson',
+            'data': EMPTY_FEATURE_COLLECTION
+        });
+
+        this.map.addSource(SOURCE_LINES_HIGHLIGHTED, {
             'type': 'geojson',
             'data': EMPTY_FEATURE_COLLECTION
         });
@@ -115,6 +124,56 @@ class MapWrapper {
             }
         );
 
+        // Highlighted tracks
+        this.map.addLayer(
+            {
+                'id': LAYER_TRACK_LINES_HIGHLIGHTED,
+                'type': 'line',
+                'source': SOURCE_LINES_HIGHLIGHTED,
+                'minzoom': 10,
+                'paint': {
+                    'line-color': '#FFF',
+                    'line-opacity': 1,
+                    'line-width': 5
+                }
+            }
+        );
+
+        // There are at least 3 ways we can highlight tracks:
+        // 1. using setFeatureState
+        //    pro: only 1 layer
+        //    con: makes it more difficult to style using case
+        // 2. using setFilter
+        //    pro: very flexible
+        //    con: needs an extra layer
+        // 3. using setData
+        //    pro: easy to highlight multiple tracks
+        //    con: needs an extra source and an extra layer
+
+        this.map.on('click', LAYER_TRACK_LINES, (e) => {
+            if (e.features.length > 0) {
+                e.preventDefault();
+                console.info('Highlighting:\n' + e.features.map((f) => " - " + f.properties.id).join('\n'));
+                // TODO : setData includes a partial line!
+                // we should either:
+                // - lookup the real track in the source
+                // - use set filter
+                this.map.getSource(SOURCE_LINES_HIGHLIGHTED)
+                    .setData({type: "FeatureCollection", features: [...e.features]});
+            }
+        });
+
+        this.map.on('click', (e) => {
+            // HACK - this is not in the API, but I can use that to prevent reset the data when clicking on a track
+            if (!e._defaultPrevented) {
+                this.map.getSource(SOURCE_LINES_HIGHLIGHTED).setData(EMPTY_FEATURE_COLLECTION);
+            }
+        });
+
+        // Change the cursor when moving over a track
+        this.map.on('mousemove', LAYER_TRACK_LINES, () => this.map.getCanvas().style.cursor = 'pointer');
+        this.map.on('mouseleave', LAYER_TRACK_LINES, () => this.map.getCanvas().style.cursor = '');
+
         // Hide points by default
         this.map.setLayoutProperty(LAYER_TRACK_POINTS, 'visibility', 'none');
 
@@ -124,6 +183,7 @@ class MapWrapper {
             data: {
                 type: "FeatureCollection",
                 features: [
+                    turf.circle(CENTER, 1, {steps: 36, units: 'kilometers'}),
                     turf.circle(CENTER, 5, {steps: 36, units: 'kilometers'}),
                     turf.circle(CENTER, 10, {steps: 36, units: 'kilometers'}),
                 ]
@@ -135,7 +195,7 @@ class MapWrapper {
             type: 'line',
             source: SOURCE_DISTANCE_CIRCLES,
             paint: {
-                'line-color': 'yellow',
+                'line-color': '#AAA',
                 'line-opacity': 1,
                 'line-width': 2
             },
@@ -202,9 +262,9 @@ class MapWrapper {
             .map((fc) => {
                 fc.features.forEach((f) => {
                     const lineFeature = {
-                        type: 'Feature',
+                        ...f,
                         geometry: {
-                            type: 'LineString',
+                            ...f.geometry,
                             coordinates: []
                         }
                     };

@@ -25,12 +25,15 @@ function doConvert(data, fileName) {
         .getElementsByTagName('trkpt');
 
     return {
-        'type': 'FeatureCollection',
-        'features': [{
-            'type': 'Feature',
-            'geometry': {
-                'type': 'LineString',
-                'coordinates': [...pointElements].map((e) => {
+        type: 'FeatureCollection',
+        features: [{
+            type: 'Feature',
+            properties: {
+                id: fileName.replace('.gpx', '')
+            },
+            geometry: {
+                type: 'LineString',
+                coordinates: [...pointElements].map((e) => {
                     return [
                         +e.getAttribute('lon'),
                         +e.getAttribute('lat')
@@ -38,9 +41,10 @@ function doConvert(data, fileName) {
                 })
             }
         }],
-        '_fileName': fileName,
-        '_time': timeString,
-        "_trackType": typeId
+        // TODO : move to properties of the feature
+        _fileName: fileName,
+        _time: timeString,
+        _trackType: typeId
     };
 }
 
