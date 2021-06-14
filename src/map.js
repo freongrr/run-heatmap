@@ -11,10 +11,12 @@ const NO_OP = () => {
 const SOURCE_POINTS = 'points';
 const SOURCE_LINES = 'tracks';
 const SOURCE_DISTANCE_CIRCLES = 'distanceCircles';
+const SOURCE_TRACE = 'trace';
 const LAYER_HEATMAP = 'points-heatmap';
 const LAYER_TRACK_POINTS = 'tracks-points';
 const LAYER_TRACK_LINES = 'tracks-lines';
 const LAYER_TRACK_LINES_HIGHLIGHTED = 'tracks-lines-hl';
+const LAYER_TRACE = 'trace';
 
 const EMPTY_FEATURE_COLLECTION = {
     type: "FeatureCollection",
@@ -141,6 +143,12 @@ class MapWrapper {
                 console.info('Highlighting tracks: ' + trackIds);
                 this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId', ...trackIds]);
                 this.onSelection(e.features);
+
+                // Use the raw data
+                // const featureCollection = this.data.find((fc) => {
+                //    return fc.features[0].properties.trackId === e.features[0].properties.trackId
+                // });
+                // this.followTrack(featureCollection.features[0]);
             }
         });
 
@@ -192,7 +200,7 @@ class MapWrapper {
 
         const files = [
             './data/1234.gpx',
-        ]; //.slice(0, 50);
+        ].slice(0, 50);
 
         console.log(`Loading ${files.length} files...`);
         const promises = files.map((f) => loadFromGpx('./data/' + f));
@@ -221,6 +229,8 @@ class MapWrapper {
     }
 
     setRawDataRender(value) {
+        this.rawDataMode = value;
+
         this.map.setLayoutProperty(
             LAYER_TRACK_LINES,
             'visibility',
@@ -278,6 +288,69 @@ class MapWrapper {
         console.log(`Rendering ${pointFeatures.length} points and ${lineFeatures.length} lines`);
         this.map.getSource(SOURCE_POINTS).setData({type: "FeatureCollection", features: pointFeatures});
         this.map.getSource(SOURCE_LINES).setData({type: "FeatureCollection", features: lineFeatures});
+    }
+
+    followTrack(feature) {
+        if (feature.geometry.type !== 'LineString') {
+            throw new Error(`Can't follow track of type ${feature.geometry.type}`);
+        }
+
+        // save full coordinate list for later
+        const coordinates = feature.geometry.coordinates;
+
+        // start by showing just the first coordinate
+        const clone = {
+            ...feature,
+            geometry: {
+                ...feature.geometry,
+                coordinates: [coordinates[0]]
+            }
+        };
+
+        // Hide everything while showing the trace
+        this.map.setLayoutProperty(LAYER_HEATMAP, 'visibility', 'none');
+        this.map.setLayoutProperty(LAYER_TRACK_POINTS, 'visibility', 'none');
+        this.map.setLayoutProperty(LAYER_TRACK_LINES, 'visibility', 'none');
+        this.map.setLayoutProperty(LAYER_TRACK_LINES_HIGHLIGHTED, 'visibility', 'none');
+
+        // Add new source/layer
+        // TODO : I would like to re-use the "highlight" one :|
+        this.map.addSource(SOURCE_TRACE, {type: 'geojson', data: {type: "FeatureCollection", features: [clone]}});
+        this.map.addLayer({
+            id: LAYER_TRACE,
+            type: 'line',
+            source: SOURCE_TRACE,
+            paint: {
+                'line-color': 'yellow',
+                'line-opacity': 0.75,
+                'line-width': 5
+            }
+        });
+
+        // setup the viewport
+        this.map.jumpTo({'center': coordinates[0], 'zoom': 14});
+        //this.map.setPitch(30);
+
+        // on a regular basis, add more coordinates from the saved list and update the map
+        let i = 0;
+        const timer = window.setInterval(() => {
+            if (i < coordinates.length) {
+                clone.geometry.coordinates.push(coordinates[i]);
+                this.map.getSource('trace').setData({type: "FeatureCollection", features: [clone]});
+                this.map.panTo(coordinates[i]);
+                i++;
+            } else {
+                window.clearInterval(timer);
+
+                // TODO : pause for a while?
+                // TODO : the selection is lost
+
+                this.setRawDataRender(this.rawDataMode)
+                this.map.removeLayer('trace');
+                this.map.removeSource('trace');
+                this.map.setLayoutProperty(LAYER_HEATMAP, 'visibility', 'visible');
+            }
+        }, 10);
     }
 }
 

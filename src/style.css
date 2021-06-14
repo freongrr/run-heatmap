@@ -41,13 +41,14 @@ a, a:visited {
     margin-right: 1em;
 }
 
-#selectedTracks {
+#trackOverlay {
     display: none;
     position: absolute;
     right: 0;
     background-color: white;
     border: 1px solid black;
     padding: 0.5em;
+    width: 300px;
 }
 
 #selectedTracks h2 {
@@ -57,4 +58,63 @@ a, a:visited {
 
 #selectedTracks > div {
     line-height: 1em;
+}
+
+.track-details {
+    display: none;
+}
+
+.track-details h2 {
+    margin: 0.5em 0;
+    font-size: larger;
+}
+
+.track-details-datetime {
+    font-style: italic;
+    font-size: 11pt;
+}
+
+.track-details-timeline-wrapper {
+    display: flex;
+    flex-direction: row;
+    margin-top: 0.5em;
+}
+
+.track-details-timeline-wrapper button {
+    margin: 0.5em;
+}
+
+.track-details-timeline-wrapper div:nth-child(2) {
+    flex-grow: 1;
+}
+
+.track-details-timeline {
+    height: 10px;
+    position: relative;
+}
+
+.track-details-timeline-bar {
+    height: 2px;
+    background-color: black;
+    margin-top: 8px;
+}
+
+.track-details-timeline-cursor {
+    position: absolute;
+    width: 2px;
+    height: 6px;
+    top: -2px;
+    left: 25%;
+    background-color: black;
+}
+
+.track-details-numbers, .track-details-links {
+    display: flex;
+    flex-direction: row;
+    font-size: 11pt;
+}
+
+.track-details-numbers-duration, .track-details-links-right {
+    flex-grow: 1;
+    text-align: right;
 }

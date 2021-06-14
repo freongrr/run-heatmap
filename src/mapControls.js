@@ -1,5 +1,6 @@
 const loadingOverlay = document.getElementById('loadOverlay');
 const mapControls = document.getElementById('mapControls');
+const trackOverlay = document.getElementById('trackOverlay');
 const selectedTracks = document.getElementById('selectedTracks');
 
 const mapWrapper = new MapWrapper();
@@ -39,8 +40,10 @@ mapWrapper.onSelection = (features) => {
     }
     // Hide/show the block
     if (features.length === 0) {
+        trackOverlay.style.display = 'none';
         selectedTracks.style.display = 'none';
     } else {
+        trackOverlay.style.display = 'block';
         selectedTracks.style.display = 'block';
     }
 };
