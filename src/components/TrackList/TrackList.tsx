@@ -1,8 +1,8 @@
 import React from 'react';
-import {TrackFeature} from "../../types";
+import {TrackFeatureLike} from '../../types';
 
 interface Props {
-    selectedFeatures: TrackFeature[];
+    selectedFeatures: TrackFeatureLike[];
 }
 
 const TrackList: React.FC<Props> = (props) => {
@@ -17,7 +17,7 @@ const TrackList: React.FC<Props> = (props) => {
 
     return (
         <div className="trackList">
-            <h2>${title}</h2>
+            <h2>{title}</h2>
             {selectedFeatures.slice(0, Math.min(selectedFeatures.length, 10)).map((f) => {
                 return (
                     <div key={f.properties.trackId}>

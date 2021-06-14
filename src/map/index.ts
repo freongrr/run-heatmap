@@ -1,8 +1,10 @@
-import * as turf from "@turf/turf";
-import mapboxgl from "mapbox-gl/dist/mapbox-gl.js";
-import {loadFromGpx} from "../utils/gpxConverter";
+import * as turf from '@turf/turf';
+import mapboxgl, {GeoJSONSource, LngLatLike} from 'mapbox-gl';
+import {loadFromGpx} from '../utils/gpxConverter';
 import {traceUrls} from '../dataLoader';
-import {TOKEN} from "./mapbox-token";
+import {TOKEN} from './mapbox-token';
+import * as GeoJSON from 'geojson';
+import {RawDataView, TrackFeature, TrackFeatureCollection, TrackFeatureLike, TrackProperties} from '../types';
 
 mapboxgl.accessToken = TOKEN;
 
@@ -23,28 +25,30 @@ const LAYER_TRACK_LINES = 'tracks-lines';
 const LAYER_TRACK_LINES_HIGHLIGHTED = 'tracks-lines-hl';
 const LAYER_TRACE = 'trace';
 
-const EMPTY_FEATURE_COLLECTION = {
+const EMPTY_FEATURE_COLLECTION: GeoJSON.FeatureCollection = {
     type: "FeatureCollection",
     features: []
 };
 
-const CENTER = [0, 0];
+const CENTER: [number, number] = [0, 0];
 
 class MapWrapper {
-    data = [];
-    skipCount = 8;
-    rawDataMode = 'Tracks';
-    yearFilter = null;
-    onLoadFilesStart = NO_OP;
-    // onLoadFilesFinish: (e?: Error) => void = NO_OP;
-    onLoadFilesFinish = NO_OP;
-    onSelection = NO_OP;
+    private initialized = false;
+    private map: mapboxgl.Map;
+    private data: TrackFeatureCollection[] = [];
+    private skipCount = 8;
+    private rawDataMode: RawDataView = 'Tracks';
+    private yearFilter: number | null = null;
+
+    public onLoadFilesStart: () => void = NO_OP;
+    public onLoadFilesFinish: (e?: Error) => void = NO_OP;
+    public onSelection: (features: TrackFeatureLike[]) => void = NO_OP;
 
     constructor() {
         // Nothing (for now?)
     }
 
-    init(containerId) {
+    public init(containerId: string): void {
         this.map = new mapboxgl.Map({
             container: containerId,
             // TODO : drop down to change style
@@ -60,24 +64,24 @@ class MapWrapper {
         });
     }
 
-    finishInitialization() {
+    private finishInitialization() {
         this.map.addSource(SOURCE_POINTS, {
-            'type': 'geojson',
-            'data': EMPTY_FEATURE_COLLECTION
+            type: 'geojson',
+            data: EMPTY_FEATURE_COLLECTION
         });
 
         this.map.addSource(SOURCE_LINES, {
-            'type': 'geojson',
-            'data': EMPTY_FEATURE_COLLECTION
+            type: 'geojson',
+            data: EMPTY_FEATURE_COLLECTION
         });
 
         // The actual heatmap
         this.map.addLayer(
             {
-                'id': LAYER_HEATMAP,
-                'type': 'heatmap',
-                'source': SOURCE_POINTS,
-                'paint': {
+                id: LAYER_HEATMAP,
+                type: 'heatmap',
+                source: SOURCE_POINTS,
+                paint: {
                     // This is based on how many points we skip when parsing the GPX files
                     'heatmap-weight': getHeatmapWeight(this.skipCount),
                     'heatmap-intensity': [
@@ -90,11 +94,11 @@ class MapWrapper {
         // Tracks as points
         this.map.addLayer(
             {
-                'id': LAYER_TRACK_POINTS,
-                'type': 'circle',
-                'source': SOURCE_POINTS,
-                'minzoom': 10,
-                'paint': {
+                id: LAYER_TRACK_POINTS,
+                type: 'circle',
+                source: SOURCE_POINTS,
+                minzoom: 10,
+                paint: {
                     'circle-radius': [
                         'interpolate', ['linear'], ['zoom'], 10, 0, 18, 5, 23, 10
                     ],
@@ -111,11 +115,11 @@ class MapWrapper {
         // Tracks as lines
         this.map.addLayer(
             {
-                'id': LAYER_TRACK_LINES,
-                'type': 'line',
-                'source': SOURCE_LINES,
-                'minzoom': 10,
-                'paint': {
+                id: LAYER_TRACK_LINES,
+                type: 'line',
+                source: SOURCE_LINES,
+                minzoom: 10,
+                paint: {
                     'line-color': '#FFF',
                     'line-opacity': [
                         'interpolate', ['linear'], ['zoom'], 10, 0, 18, 0.3, 23, 1
@@ -130,11 +134,11 @@ class MapWrapper {
         // Highlighted tracks
         this.map.addLayer(
             {
-                'id': LAYER_TRACK_LINES_HIGHLIGHTED,
-                'type': 'line',
-                'source': SOURCE_LINES,
-                'minzoom': 10,
-                'paint': {
+                id: LAYER_TRACK_LINES_HIGHLIGHTED,
+                type: 'line',
+                source: SOURCE_LINES,
+                minzoom: 10,
+                paint: {
                     'line-color': '#FFF',
                     'line-opacity': 1,
                     'line-width': 5
@@ -143,12 +147,14 @@ class MapWrapper {
         );
 
         this.map.on('click', LAYER_TRACK_LINES, (e) => {
-            if (e.features.length > 0) {
+            // HACK - there's no guarantee these features are proper TrackFeature, but they are similar
+            const features = e.features as unknown as TrackFeatureLike[];
+            if (features.length > 0) {
                 e.preventDefault();
-                const trackIds = e.features.map((f) => f.properties.trackId);
+                const trackIds = features.map((f) => f.properties.trackId);
                 console.info('Highlighting tracks: ' + trackIds);
                 this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId', ...trackIds]);
-                this.onSelection(e.features);
+                this.onSelection(features);
 
                 // Use the raw data
                 // const featureCollection = this.data.find((fc) => {
@@ -181,7 +187,7 @@ class MapWrapper {
         this.map.addSource(SOURCE_DISTANCE_CIRCLES, {
             type: 'geojson',
             data: {
-                type: "FeatureCollection",
+                type: 'FeatureCollection',
                 features: [
                     turf.circle(CENTER, 1, {steps: 36, units: 'kilometers'}),
                     turf.circle(CENTER, 5, {steps: 36, units: 'kilometers'}),
@@ -204,7 +210,7 @@ class MapWrapper {
         this.initialized = true;
     }
 
-    loadFiles() {
+    private loadFiles() {
         this.onLoadFilesStart();
 
         const traceFileUrls = traceUrls; //.slice(0, 50);
@@ -224,14 +230,14 @@ class MapWrapper {
             });
     }
 
-    setYearFilter(year) {
+    public setYearFilter(year: number | null): void {
         this.yearFilter = year;
         if (this.initialized) {
             this.refreshData();
         }
     }
 
-    setDataSampling(value) {
+    public setDataSampling(value: number): void {
         this.skipCount = value;
         if (this.initialized) {
             this.refreshData();
@@ -239,7 +245,7 @@ class MapWrapper {
         }
     }
 
-    setRawDataRender(value) {
+    public setRawDataRender(value: RawDataView): void {
         this.rawDataMode = value;
 
         if (this.initialized) {
@@ -257,15 +263,16 @@ class MapWrapper {
         }
     }
 
-    refreshData() {
-        const lineFeatures = [];
-        const pointFeatures = [];
+    private refreshData() {
+        const lineFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
+        const pointFeatures: GeoJSON.Feature<GeoJSON.Point>[] = [];
 
         this.data
-            // Only type 9 (Run)
-            .filter((fc) => fc._trackType === 9)
-            // Only current year or all
-            .filter((fc) => this.yearFilter === null || fc._time.startsWith(this.yearFilter + '-'))
+            .filter((fc) => {
+                const {type, time} = fc.features[0].properties;
+                // Only type 9 (Run) and only current year (or all)
+                return type === 9 && this.yearFilter === null || time.startsWith(this.yearFilter + '-');
+            })
             // Merge features from all feature collections
             .map((fc) => {
                 fc.features.forEach((f) => {
@@ -273,7 +280,7 @@ class MapWrapper {
                         ...f,
                         geometry: {
                             ...f.geometry,
-                            coordinates: []
+                            coordinates: [] as GeoJSON.Position[]
                         }
                     };
 
@@ -286,10 +293,11 @@ class MapWrapper {
                             const [lon, lat] = c;
                             lineFeature.geometry.coordinates.push([lon, lat]);
                             pointFeatures.push({
-                                'type': 'Feature',
-                                'geometry': {
-                                    'type': 'Point',
-                                    'coordinates': [lon, lat, 0.0]
+                                type: 'Feature',
+                                properties: {},
+                                geometry: {
+                                    type: 'Point',
+                                    coordinates: [lon, lat, 0.0]
                                 }
                             });
                         });
@@ -299,11 +307,13 @@ class MapWrapper {
             });
 
         console.log(`Rendering ${pointFeatures.length} points and ${lineFeatures.length} lines`);
-        this.map.getSource(SOURCE_POINTS).setData({type: "FeatureCollection", features: pointFeatures});
-        this.map.getSource(SOURCE_LINES).setData({type: "FeatureCollection", features: lineFeatures});
+        (this.map.getSource(SOURCE_POINTS) as GeoJSONSource)
+            .setData({type: 'FeatureCollection', features: pointFeatures});
+        (this.map.getSource(SOURCE_LINES) as GeoJSONSource)
+            .setData({type: 'FeatureCollection', features: lineFeatures});
     }
 
-    followTrack(feature) {
+    private followTrack(feature: GeoJSON.Feature): void {
         if (feature.geometry.type !== 'LineString') {
             throw new Error(`Can't follow track of type ${feature.geometry.type}`);
         }
@@ -328,7 +338,7 @@ class MapWrapper {
 
         // Add new source/layer
         // TODO : I would like to re-use the "highlight" one :|
-        this.map.addSource(SOURCE_TRACE, {type: 'geojson', data: {type: "FeatureCollection", features: [clone]}});
+        this.map.addSource(SOURCE_TRACE, {type: 'geojson', data: {type: 'FeatureCollection', features: [clone]}});
         this.map.addLayer({
             id: LAYER_TRACE,
             type: 'line',
@@ -341,7 +351,10 @@ class MapWrapper {
         });
 
         // setup the viewport
-        this.map.jumpTo({'center': coordinates[0], 'zoom': 14});
+        this.map.jumpTo({
+            center: coordinates[0] as LngLatLike,
+            zoom: 14
+        });
         //this.map.setPitch(30);
 
         // on a regular basis, add more coordinates from the saved list and update the map
@@ -349,8 +362,9 @@ class MapWrapper {
         const timer = window.setInterval(() => {
             if (i < coordinates.length) {
                 clone.geometry.coordinates.push(coordinates[i]);
-                this.map.getSource('trace').setData({type: "FeatureCollection", features: [clone]});
-                this.map.panTo(coordinates[i]);
+                (this.map.getSource(SOURCE_TRACE) as GeoJSONSource)
+                    .setData({type: 'FeatureCollection', features: [clone]});
+                this.map.panTo(coordinates[i] as LngLatLike);
                 i++;
             } else {
                 window.clearInterval(timer);
@@ -359,15 +373,15 @@ class MapWrapper {
                 // TODO : the selection is lost
 
                 this.setRawDataRender(this.rawDataMode)
-                this.map.removeLayer('trace');
-                this.map.removeSource('trace');
+                this.map.removeLayer(LAYER_TRACE);
+                this.map.removeSource(SOURCE_TRACE);
                 this.map.setLayoutProperty(LAYER_HEATMAP, 'visibility', 'visible');
             }
         }, 10);
     }
 }
 
-function getHeatmapWeight(skipCount) {
+function getHeatmapWeight(skipCount: number): number {
     if (skipCount === 2) {
         return 0.002;
     } else {

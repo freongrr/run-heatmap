@@ -4,8 +4,8 @@ import './style.scss';
 import MapControls from './components/MapControls';
 import LoadingOverlay from './components/LoadingOverlay';
 import TrackOverlay from './components/TrackOverlay';
-import MapWrapper from "./map";
-import {TrackFeature} from "./types";
+import MapWrapper from './map';
+import {RawDataView, TrackFeature, TrackFeatureLike} from './types';
 
 const App = () => {
     const [mapWrapper] = React.useState(new MapWrapper());
@@ -13,8 +13,8 @@ const App = () => {
     const [error, setError] = React.useState<string>(null);
     const [year, setYear] = React.useState<number>(null);
     const [sampling, setSampling] = React.useState<number>(8);
-    const [rawDataView, setRawDataView] = React.useState<string>('Tracks');
-    const [selectedFeatures, setSelectedFeatures] = React.useState<TrackFeature[]>([]);
+    const [rawDataView, setRawDataView] = React.useState<RawDataView>('Tracks');
+    const [selectedFeatures, setSelectedFeatures] = React.useState<TrackFeatureLike[]>([]);
 
     setTimeout(() => {
         setLoading(false);
@@ -30,8 +30,7 @@ const App = () => {
                 setLoading(true);
             }
         };
-        // @ts-ignore
-        mapWrapper.onSelection = (features: TrackFeature[]) => {
+        mapWrapper.onSelection = (features) => {
             setSelectedFeatures(features);
         };
         mapWrapper.init('map');

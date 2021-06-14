@@ -1,9 +1,9 @@
 import React from 'react';
 import TrackList from '../TrackList';
-import {TrackFeature} from "../../types";
+import {TrackFeatureLike} from '../../types';
 
 interface Props {
-    selectedFeatures: TrackFeature[];
+    selectedFeatures: TrackFeatureLike[];
 }
 
 const TrackOverlay: React.FC<Props> = (props) => {

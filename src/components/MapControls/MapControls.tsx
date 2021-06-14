@@ -1,12 +1,13 @@
 import React from 'react';
+import {RawDataView} from '../../types';
 
 interface Props {
     year: number | null;
     onSelectYear: (v: number | null) => void;
     sampling: number;
     onSelectSampling: (v: number) => void;
-    rawDataView: string;
-    onSelectRawDataView: (v: string) => void;
+    rawDataView: RawDataView;
+    onSelectRawDataView: (v: RawDataView) => void;
 }
 
 // TODO : split into MapControls and ControlOverlay?
