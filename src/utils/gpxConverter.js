@@ -1,4 +1,4 @@
-function loadFromGpx(url /* string */) {
+export function loadFromGpx(url /* string */) {
     return fetch(url)
         .then((r) => r.text())
         .then((d) => {

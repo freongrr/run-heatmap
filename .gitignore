@@ -1,3 +1,4 @@
 /.idea/
+/dist/
 /src/data/*.gpx
 /src/lib/

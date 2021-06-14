@@ -1,0 +1,57 @@
+.trackDetails {
+
+  h2 {
+    margin: 0.5em 0;
+    font-size: larger;
+  }
+
+  &-datetime {
+    font-style: italic;
+    font-size: 11pt;
+  }
+
+  &-timeline-wrapper {
+    display: flex;
+    flex-direction: row;
+    margin-top: 0.5em;
+
+    & button {
+      margin: 0.5em;
+    }
+
+    & div:nth-child(2) {
+      flex-grow: 1;
+    }
+  }
+
+  &-timeline {
+    height: 10px;
+    position: relative;
+
+    &-bar {
+      height: 2px;
+      background-color: black;
+      margin-top: 8px;
+    }
+
+    &-cursor {
+      position: absolute;
+      width: 2px;
+      height: 6px;
+      top: -2px;
+      left: 25%;
+      background-color: black;
+    }
+  }
+
+  &-numbers, &-links {
+    display: flex;
+    flex-direction: row;
+    font-size: 11pt;
+
+    &-duration, &-right {
+      flex-grow: 1;
+      text-align: right;
+    }
+  }
+}

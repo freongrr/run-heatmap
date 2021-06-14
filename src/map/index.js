@@ -1,5 +1,10 @@
-// noinspection SpellCheckingInspection
-mapboxgl.accessToken = 'XXX';
+import * as turf from "@turf/turf";
+import mapboxgl from "mapbox-gl/dist/mapbox-gl.js";
+import {loadFromGpx} from "../utils/gpxConverter";
+import {traceUrls} from '../dataLoader';
+import {TOKEN} from "./mapbox-token";
+
+mapboxgl.accessToken = TOKEN;
 
 // A lot of the code is taken from:
 // https://docs.mapbox.com/mapbox-gl-js/example/heatmap-layer/
@@ -31,6 +36,7 @@ class MapWrapper {
     rawDataMode = 'Tracks';
     yearFilter = null;
     onLoadFilesStart = NO_OP;
+    // onLoadFilesFinish: (e?: Error) => void = NO_OP;
     onLoadFilesFinish = NO_OP;
     onSelection = NO_OP;
 
@@ -167,8 +173,9 @@ class MapWrapper {
         this.map.on('mousemove', LAYER_TRACK_LINES, () => this.map.getCanvas().style.cursor = 'pointer');
         this.map.on('mouseleave', LAYER_TRACK_LINES, () => this.map.getCanvas().style.cursor = '');
 
-        // Hide points by default
-        this.map.setLayoutProperty(LAYER_TRACK_POINTS, 'visibility', 'none');
+        // Show/hide layers (we have to do that because the setter can be called before we get here)
+        this.map.setLayoutProperty(LAYER_TRACK_LINES, 'visibility', this.rawDataMode === 'Tracks' ? 'visible' : 'none');
+        this.map.setLayoutProperty(LAYER_TRACK_POINTS, 'visibility', this.rawDataMode === 'Points' ? 'visible' : 'none');
 
         // Add circles at 5km and 10km
         this.map.addSource(SOURCE_DISTANCE_CIRCLES, {
@@ -193,17 +200,17 @@ class MapWrapper {
                 'line-width': 2
             },
         });
+
+        this.initialized = true;
     }
 
     loadFiles() {
         this.onLoadFilesStart();
 
-        const files = [
-            './data/1234.gpx',
-        ].slice(0, 50);
+        const traceFileUrls = traceUrls; //.slice(0, 50);
 
-        console.log(`Loading ${files.length} files...`);
-        const promises = files.map((f) => loadFromGpx('./data/' + f));
+        console.log(`Loading ${traceFileUrls.length} files...`);
+        const promises = traceFileUrls.map((f) => loadFromGpx(f));
         Promise.all(promises)
             .then((data) => {
                 this.data = data;
@@ -219,29 +226,35 @@ class MapWrapper {
 
     setYearFilter(year) {
         this.yearFilter = year;
-        this.refreshData();
+        if (this.initialized) {
+            this.refreshData();
+        }
     }
 
     setDataSampling(value) {
         this.skipCount = value;
-        this.refreshData();
-        this.map.setPaintProperty(LAYER_HEATMAP, 'heatmap-weight', getHeatmapWeight(value));
+        if (this.initialized) {
+            this.refreshData();
+            this.map.setPaintProperty(LAYER_HEATMAP, 'heatmap-weight', getHeatmapWeight(value));
+        }
     }
 
     setRawDataRender(value) {
         this.rawDataMode = value;
 
-        this.map.setLayoutProperty(
-            LAYER_TRACK_LINES,
-            'visibility',
-            value === 'Tracks' ? 'visible' : 'none'
-        );
+        if (this.initialized) {
+            this.map.setLayoutProperty(
+                LAYER_TRACK_LINES,
+                'visibility',
+                value === 'Tracks' ? 'visible' : 'none'
+            );
 
-        this.map.setLayoutProperty(
-            LAYER_TRACK_POINTS,
-            'visibility',
-            value === 'Points' ? 'visible' : 'none'
-        );
+            this.map.setLayoutProperty(
+                LAYER_TRACK_POINTS,
+                'visibility',
+                value === 'Points' ? 'visible' : 'none'
+            );
+        }
     }
 
     refreshData() {
@@ -361,3 +374,5 @@ function getHeatmapWeight(skipCount) {
         return 2 * getHeatmapWeight(skipCount / 2) - 0.001;
     }
 }
+
+export default MapWrapper;
