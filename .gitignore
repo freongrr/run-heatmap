@@ -2,3 +2,4 @@
 /dist/
 /src/data/*.gpx
 /src/lib/
+/node_modules/

@@ -1,11 +1,9 @@
 import {TrackFeature, TrackFeatureCollection} from '../types';
 
-export function loadFromGpx(url: string): Promise<TrackFeatureCollection> {
+export function loadFromGpx(fileName: string, url: string): Promise<TrackFeatureCollection> {
     return fetch(url)
         .then((r) => r.text())
         .then((d) => {
-            const index = url.lastIndexOf('/');
-            const fileName = url.substring(index + 1, url.length)
             return doConvert(d, fileName);
         });
 }
@@ -33,7 +31,10 @@ function doConvert(data: string, fileName: string): TrackFeatureCollection {
             trackId: fileName.replace('.gpx', ''),
             description: description,
             time: timeString,
-            type: typeId
+            type: typeId,
+            timestamps: Array.from(pointElements).map((e) => {
+                return getChildElementValue(e, 'time');
+            })
         },
         geometry: {
             type: 'LineString',
@@ -52,7 +53,7 @@ function doConvert(data: string, fileName: string): TrackFeatureCollection {
     };
 }
 
-function getChildElementValue(element: Element, tagName: string) {
+function getChildElementValue(element: Element, tagName: string): string {
     const elements = element.getElementsByTagName(tagName);
     if (elements.length > 0 && elements[0].childNodes.length > 0) {
         const childElement = elements[0];

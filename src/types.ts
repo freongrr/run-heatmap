@@ -7,15 +7,13 @@ export type RawDataView = 'Tracks' | 'Points' | 'Hidden';
 export interface TrackProperties {
     trackId: string;
     description: string;
+    // TODO : use the first timestamp
     time: string;
+    // TODO : use an emum
     type: number;
+    // TODO : use a number of some kind of object
+    timestamps: string[];
 }
 
-export interface TrackFeatureCollection extends GeoJSON.FeatureCollection<GeoJSON.LineString, TrackProperties> {
-}
-
-export interface TrackFeature extends GeoJSON.Feature<GeoJSON.LineString, TrackProperties> {
-}
-
-// TODO : Eliminate this, or use it everywhere?
-export type TrackFeatureLike = GeoJSON.Feature<GeoJSON.Geometry, TrackProperties>;
+export type TrackFeatureCollection = GeoJSON.FeatureCollection<GeoJSON.LineString, TrackProperties>;
+export type TrackFeature = GeoJSON.Feature<GeoJSON.LineString, TrackProperties>;

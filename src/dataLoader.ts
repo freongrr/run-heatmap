@@ -1,11 +1,13 @@
 // Copied from https://webpack.js.org/guides/dependency-management/
 
 // TODO : try with inlined resources instead of URLs
-const traceUrls: string[] = [];
+const traceUrls = new Map<string, string>();
 
 function importAll(r: any) {
     r.keys().forEach((key: any) => {
-        traceUrls.push(r(key));
+        const fileName = key.replace('./', '');
+        const url = r(key);
+        traceUrls.set(fileName, url);
     });
 }
 

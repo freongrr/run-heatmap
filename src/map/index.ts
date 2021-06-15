@@ -4,7 +4,7 @@ import {loadFromGpx} from '../utils/gpxConverter';
 import {traceUrls} from '../dataLoader';
 import {TOKEN} from './mapbox-token';
 import * as GeoJSON from 'geojson';
-import {RawDataView, TrackFeature, TrackFeatureCollection, TrackFeatureLike, TrackProperties} from '../types';
+import {RawDataView, TrackFeature, TrackFeatureCollection, TrackProperties} from '../types';
 
 mapboxgl.accessToken = TOKEN;
 
@@ -15,15 +15,16 @@ const NO_OP = () => {
     // no-op
 };
 
-const SOURCE_POINTS = 'points';
-const SOURCE_LINES = 'tracks';
-const SOURCE_DISTANCE_CIRCLES = 'distanceCircles';
-const SOURCE_TRACE = 'trace';
-const LAYER_HEATMAP = 'points-heatmap';
+const SOURCE_TRACK_POINTS = 'track-points';
+const SOURCE_TRACK_LINES = 'track-lines';
+const SOURCE_SINGLE_TRACK = 'single-track';
+const SOURCE_DISTANCE_CIRCLES = 'distance-circles';
+const LAYER_HEATMAP = 'heatmap';
 const LAYER_TRACK_POINTS = 'tracks-points';
 const LAYER_TRACK_LINES = 'tracks-lines';
-const LAYER_TRACK_LINES_HIGHLIGHTED = 'tracks-lines-hl';
-const LAYER_TRACE = 'trace';
+const LAYER_TRACK_LINES_HIGHLIGHTED = 'tracks-lines-highlighted';
+const LAYER_CIRCLES = 'distance-circles';
+const LAYER_SINGLE_TRACK = 'single-track';
 
 const EMPTY_FEATURE_COLLECTION: GeoJSON.FeatureCollection = {
     type: "FeatureCollection",
@@ -42,7 +43,7 @@ class MapWrapper {
 
     public onLoadFilesStart: () => void = NO_OP;
     public onLoadFilesFinish: (e?: Error) => void = NO_OP;
-    public onSelection: (features: TrackFeatureLike[]) => void = NO_OP;
+    public onSelection: (features: TrackFeature[]) => void = NO_OP;
 
     constructor() {
         // Nothing (for now?)
@@ -65,22 +66,28 @@ class MapWrapper {
     }
 
     private finishInitialization() {
-        this.map.addSource(SOURCE_POINTS, {
+        // Sources
+        this.map.addSource(SOURCE_TRACK_POINTS, {type: 'geojson', data: EMPTY_FEATURE_COLLECTION});
+        this.map.addSource(SOURCE_TRACK_LINES, {type: 'geojson', data: EMPTY_FEATURE_COLLECTION});
+        this.map.addSource(SOURCE_SINGLE_TRACK, {type: 'geojson', data: EMPTY_FEATURE_COLLECTION});
+        this.map.addSource(SOURCE_DISTANCE_CIRCLES, {
             type: 'geojson',
-            data: EMPTY_FEATURE_COLLECTION
+            data: {
+                type: 'FeatureCollection',
+                features: [
+                    //turf.circle(CENTER, 1, {steps: 36, units: 'kilometers'}),
+                    turf.circle(CENTER, 5, {steps: 36, units: 'kilometers'}),
+                    turf.circle(CENTER, 10, {steps: 36, units: 'kilometers'}),
+                ]
+            }
         });
 
-        this.map.addSource(SOURCE_LINES, {
-            type: 'geojson',
-            data: EMPTY_FEATURE_COLLECTION
-        });
-
-        // The actual heatmap
+        // Layer 1: heatmap
         this.map.addLayer(
             {
                 id: LAYER_HEATMAP,
                 type: 'heatmap',
-                source: SOURCE_POINTS,
+                source: SOURCE_TRACK_POINTS,
                 paint: {
                     // This is based on how many points we skip when parsing the GPX files
                     'heatmap-weight': getHeatmapWeight(this.skipCount),
@@ -91,12 +98,12 @@ class MapWrapper {
             }
         );
 
-        // Tracks as points
+        // Layer 2: tracks as points
         this.map.addLayer(
             {
                 id: LAYER_TRACK_POINTS,
                 type: 'circle',
-                source: SOURCE_POINTS,
+                source: SOURCE_TRACK_POINTS,
                 minzoom: 10,
                 paint: {
                     'circle-radius': [
@@ -112,12 +119,12 @@ class MapWrapper {
             }
         );
 
-        // Tracks as lines
+        // Layer 3: Tracks as lines
         this.map.addLayer(
             {
                 id: LAYER_TRACK_LINES,
                 type: 'line',
-                source: SOURCE_LINES,
+                source: SOURCE_TRACK_LINES,
                 minzoom: 10,
                 paint: {
                     'line-color': '#FFF',
@@ -131,12 +138,12 @@ class MapWrapper {
             }
         );
 
-        // Highlighted tracks
+        // Layer 4: selected/highlighted tracks
         this.map.addLayer(
             {
                 id: LAYER_TRACK_LINES_HIGHLIGHTED,
                 type: 'line',
-                source: SOURCE_LINES,
+                source: SOURCE_TRACK_LINES,
                 minzoom: 10,
                 paint: {
                     'line-color': '#FFF',
@@ -146,21 +153,37 @@ class MapWrapper {
             }
         );
 
+        // TODO : move that out (or at least move the even handling part out)
         this.map.on('click', LAYER_TRACK_LINES, (e) => {
-            // HACK - there's no guarantee these features are proper TrackFeature, but they are similar
-            const features = e.features as unknown as TrackFeatureLike[];
-            if (features.length > 0) {
+            const trackIds = e.features.map((f) => {
+                return (f.properties as TrackProperties).trackId;
+            });
+            if (trackIds.length > 0) {
                 e.preventDefault();
-                const trackIds = features.map((f) => f.properties.trackId);
+
+                // TODO : instead of setting the selection here
+                // we should:
+                // - fire an event with the feature(s)
+                // - let the UI store the selection
+                // - UI calls setHighlightedTracks on the map
+                // - when there is only one track, show the details
+                // - when there are multiple tracks, show the list
+                //   - when the user move-over a track in the list,
+                //     the UI calls setHighlightedTracks with this track
+                //   - when the user move-out
+                //     the UI calls setHighlightedTracks with all the tracks
+                //   - when the user clicks on a track in the list
+                //     the UI calls setHighlightedTracks with the single track
+                //     and it shows the details of the track
+
                 console.info('Highlighting tracks: ' + trackIds);
                 this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId', ...trackIds]);
-                this.onSelection(features);
 
-                // Use the raw data
-                // const featureCollection = this.data.find((fc) => {
-                //    return fc.features[0].properties.trackId === e.features[0].properties.trackId
-                // });
-                // this.followTrack(featureCollection.features[0]);
+                // Use the raw data because it has all the points and properties
+                const featureCollection = this.data.filter((fc) => {
+                    return trackIds.includes(fc.features[0].properties.trackId)
+                });
+                this.onSelection(featureCollection.map((fc) => fc.features[0]));
             }
         });
 
@@ -172,32 +195,20 @@ class MapWrapper {
             }
         });
 
-        // Empty filter initially
-        this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId']);
-
         // Change the cursor when moving over a track
         this.map.on('mousemove', LAYER_TRACK_LINES, () => this.map.getCanvas().style.cursor = 'pointer');
         this.map.on('mouseleave', LAYER_TRACK_LINES, () => this.map.getCanvas().style.cursor = '');
+
+        // Empty filter initially
+        this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId']);
 
         // Show/hide layers (we have to do that because the setter can be called before we get here)
         this.map.setLayoutProperty(LAYER_TRACK_LINES, 'visibility', this.rawDataMode === 'Tracks' ? 'visible' : 'none');
         this.map.setLayoutProperty(LAYER_TRACK_POINTS, 'visibility', this.rawDataMode === 'Points' ? 'visible' : 'none');
 
-        // Add circles at 5km and 10km
-        this.map.addSource(SOURCE_DISTANCE_CIRCLES, {
-            type: 'geojson',
-            data: {
-                type: 'FeatureCollection',
-                features: [
-                    turf.circle(CENTER, 1, {steps: 36, units: 'kilometers'}),
-                    turf.circle(CENTER, 5, {steps: 36, units: 'kilometers'}),
-                    turf.circle(CENTER, 10, {steps: 36, units: 'kilometers'}),
-                ]
-            }
-        });
-
+        // Layer 5: Circles for distances
         this.map.addLayer({
-            id: 'circle-fill',
+            id: LAYER_CIRCLES,
             type: 'line',
             source: SOURCE_DISTANCE_CIRCLES,
             paint: {
@@ -207,16 +218,28 @@ class MapWrapper {
             },
         });
 
+        // Layer 6: Trace
+        this.map.addLayer({
+            id: LAYER_SINGLE_TRACK,
+            type: 'line',
+            source: SOURCE_SINGLE_TRACK,
+            paint: {
+                'line-color': 'yellow',
+                'line-opacity': 0.75,
+                'line-width': 5
+            }
+        });
+
         this.initialized = true;
     }
 
     private loadFiles() {
         this.onLoadFilesStart();
 
-        const traceFileUrls = traceUrls; //.slice(0, 50);
+        const keys = Array.from(traceUrls.keys()); //.slice(0, 50);
 
-        console.log(`Loading ${traceFileUrls.length} files...`);
-        const promises = traceFileUrls.map((f) => loadFromGpx(f));
+        console.log(`Loading ${keys.length} files...`);
+        const promises = keys.map((f) => loadFromGpx(f, traceUrls.get(f)));
         Promise.all(promises)
             .then((data) => {
                 this.data = data;
@@ -307,77 +330,55 @@ class MapWrapper {
             });
 
         console.log(`Rendering ${pointFeatures.length} points and ${lineFeatures.length} lines`);
-        (this.map.getSource(SOURCE_POINTS) as GeoJSONSource)
+        (this.map.getSource(SOURCE_TRACK_POINTS) as GeoJSONSource)
             .setData({type: 'FeatureCollection', features: pointFeatures});
-        (this.map.getSource(SOURCE_LINES) as GeoJSONSource)
+        (this.map.getSource(SOURCE_TRACK_LINES) as GeoJSONSource)
             .setData({type: 'FeatureCollection', features: lineFeatures});
     }
 
-    private followTrack(feature: GeoJSON.Feature): void {
-        if (feature.geometry.type !== 'LineString') {
-            throw new Error(`Can't follow track of type ${feature.geometry.type}`);
-        }
-
-        // save full coordinate list for later
+    public enterReplay(feature: TrackFeature): void {
         const coordinates = feature.geometry.coordinates;
 
-        // start by showing just the first coordinate
-        const clone = {
-            ...feature,
-            geometry: {
-                ...feature.geometry,
-                coordinates: [coordinates[0]]
-            }
-        };
-
-        // Hide everything while showing the trace
         this.map.setLayoutProperty(LAYER_HEATMAP, 'visibility', 'none');
         this.map.setLayoutProperty(LAYER_TRACK_POINTS, 'visibility', 'none');
         this.map.setLayoutProperty(LAYER_TRACK_LINES, 'visibility', 'none');
         this.map.setLayoutProperty(LAYER_TRACK_LINES_HIGHLIGHTED, 'visibility', 'none');
+        this.map.setLayoutProperty(LAYER_CIRCLES, 'visibility', 'none');
 
-        // Add new source/layer
-        // TODO : I would like to re-use the "highlight" one :|
-        this.map.addSource(SOURCE_TRACE, {type: 'geojson', data: {type: 'FeatureCollection', features: [clone]}});
-        this.map.addLayer({
-            id: LAYER_TRACE,
-            type: 'line',
-            source: SOURCE_TRACE,
-            paint: {
-                'line-color': 'yellow',
-                'line-opacity': 0.75,
-                'line-width': 5
-            }
-        });
-
-        // setup the viewport
         this.map.jumpTo({
             center: coordinates[0] as LngLatLike,
             zoom: 14
         });
-        //this.map.setPitch(30);
 
-        // on a regular basis, add more coordinates from the saved list and update the map
-        let i = 0;
-        const timer = window.setInterval(() => {
-            if (i < coordinates.length) {
-                clone.geometry.coordinates.push(coordinates[i]);
-                (this.map.getSource(SOURCE_TRACE) as GeoJSONSource)
-                    .setData({type: 'FeatureCollection', features: [clone]});
-                this.map.panTo(coordinates[i] as LngLatLike);
-                i++;
-            } else {
-                window.clearInterval(timer);
+        // this.map.setPitch(30);
+    }
 
-                // TODO : pause for a while?
-                // TODO : the selection is lost
+    public setReplayPosition(feature: TrackFeature, position: number): void {
+        const coordinates = feature.geometry.coordinates;
 
-                this.setRawDataRender(this.rawDataMode)
-                this.map.removeLayer(LAYER_TRACE);
-                this.map.removeSource(SOURCE_TRACE);
-                this.map.setLayoutProperty(LAYER_HEATMAP, 'visibility', 'visible');
+        const clone = {
+            ...feature,
+            geometry: {
+                ...feature.geometry,
+                coordinates: feature.geometry.coordinates.slice(0, position)
             }
-        }, 10);
+        };
+
+        (this.map.getSource(SOURCE_SINGLE_TRACK) as GeoJSONSource)
+            .setData({type: 'FeatureCollection', features: [clone]});
+        this.map.panTo(coordinates[position] as LngLatLike);
+    }
+
+    public exitReplay(): void {
+        // TODO : get back to initial position, or show complete track?
+        // this.map.setPitch(0);
+
+        (this.map.getSource(SOURCE_SINGLE_TRACK) as GeoJSONSource).setData(EMPTY_FEATURE_COLLECTION);
+
+        this.map.setLayoutProperty(LAYER_HEATMAP, 'visibility', 'visible');
+        this.map.setLayoutProperty(LAYER_TRACK_LINES_HIGHLIGHTED, 'visibility', 'visible');
+        this.map.setLayoutProperty(LAYER_CIRCLES, 'visibility', 'visible');
+        this.setRawDataRender(this.rawDataMode)
     }
 }
 
