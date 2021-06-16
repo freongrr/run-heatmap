@@ -1,14 +1,13 @@
 import React from 'react';
-import {TrackFeature} from '../../types';
+import {Replay, TrackFeature} from '../../types';
 import TrackList from '../TrackList';
 import TrackDetails from '../TrackDetails';
 
 interface Props {
     selectedFeatures: TrackFeature[];
     activeFeature: TrackFeature | null;
-    replayPosition: number | null;
+    replay: Replay;
     onActiveFeature: (f: TrackFeature | null) => void;
-    onReplayFeature: () => void;
 }
 
 const TrackOverlay: React.FC<Props> = (props) => {
@@ -19,8 +18,7 @@ const TrackOverlay: React.FC<Props> = (props) => {
             )}
             {props.activeFeature && <TrackDetails
                 feature={props.activeFeature}
-                replayPosition={props.replayPosition}
-                onReplay={props.onReplayFeature}
+                replay={props.replay}
                 onDismiss={() => props.onActiveFeature(null)}
             />}
         </div>

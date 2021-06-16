@@ -6,6 +6,7 @@ import MapControls from './components/MapControls';
 import LoadingOverlay from './components/LoadingOverlay';
 import TrackOverlay from './components/TrackOverlay';
 import MapWrapper from './map';
+import {useReplay} from './useReplay';
 
 const App = () => {
     const [mapWrapper] = React.useState(new MapWrapper());
@@ -16,18 +17,8 @@ const App = () => {
     const [rawDataView, setRawDataView] = React.useState<RawDataView>('Tracks');
     const [selectedFeatures, setSelectedFeatures] = React.useState<TrackFeature[]>([]);
     const [activeFeature, setActiveFeature] = React.useState<TrackFeature | null>(null);
-    const [replayStatus, setReplayStatus] = React.useState<'stopped' | 'playing' | 'paused'>('stopped');
-    const [replayPosition, setReplayPosition] = React.useState<number | null>(null);
 
-    function stopReplay() {
-        // TODO : we should only call exitReplay() if the replay was really playing
-        //        but we can't check replayStatus because the initial value is captured by useEffect
-        // if (replayStatus != 'stopped') {
-        mapWrapper.exitReplay();
-        setReplayStatus('stopped');
-        setReplayPosition(null);
-        // }
-    }
+    const replay = useReplay(mapWrapper, activeFeature);
 
     // TODO : move that down to a Component wrapping the map?
     React.useEffect(() => {
@@ -47,7 +38,6 @@ const App = () => {
             } else {
                 setActiveFeature(null);
             }
-            stopReplay();
         };
         mapWrapper.init('map');
     }, []);
@@ -63,40 +53,7 @@ const App = () => {
         } else {
             mapWrapper.setHighlightedFeatures(selectedFeatures);
         }
-        stopReplay();
-    }, [mapWrapper, selectedFeatures, setReplayStatus, setReplayPosition]);
-
-    const onReplayFeature = React.useCallback(() => {
-        if (activeFeature) {
-            if (replayStatus === 'stopped') {
-                mapWrapper.enterReplay(activeFeature);
-                setReplayStatus('playing');
-                setReplayPosition(0);
-            } else if (replayStatus === 'paused') {
-                setReplayStatus('playing');
-            }
-        }
-    }, [mapWrapper, activeFeature, replayStatus, setReplayStatus, setReplayPosition]);
-
-    React.useEffect(() => {
-        let timer: any = null;
-        if (activeFeature && replayStatus === 'playing') {
-            // TODO : start and finish slowly and accelerate in the middle
-            if (replayPosition < activeFeature.geometry.coordinates.length) {
-                mapWrapper.setReplayPosition(activeFeature, replayPosition);
-                timer = setTimeout(() => {
-                    setReplayPosition(replayPosition + 1);
-                }, 10);
-            } else {
-                setReplayStatus('paused');
-            }
-        }
-        return () => {
-            if (timer) {
-                clearTimeout(timer);
-            }
-        }
-    }, [mapWrapper, activeFeature, replayStatus, replayPosition]);
+    }, [mapWrapper, selectedFeatures, setActiveFeature]);
 
     return (
         <>
@@ -112,9 +69,8 @@ const App = () => {
             {!loading && <TrackOverlay
                 selectedFeatures={selectedFeatures}
                 activeFeature={activeFeature}
-                replayPosition={replayPosition}
+                replay={replay}
                 onActiveFeature={onActivateOrDeactivateFeature}
-                onReplayFeature={onReplayFeature}
             />}
         </>
     );

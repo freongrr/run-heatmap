@@ -1,17 +1,16 @@
 import React from 'react';
-import {TrackFeature} from '../../types';
+import {Replay, TrackFeature} from '../../types';
 import {formatTime} from '../../utils/formatTime';
 import TrackReplayInfo from './TrackReplayInfo';
 
 interface Props {
     feature: TrackFeature;
-    replayPosition: number | null;
-    onReplay: () => void;
+    replay: Replay;
     onDismiss: () => void;
 }
 
 const TrackDetails: React.FC<Props> = (props) => {
-    const feature = props.feature;
+    const {feature, replay} = props;
 
     const onClickDismiss = React.useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
@@ -36,9 +35,11 @@ const TrackDetails: React.FC<Props> = (props) => {
 
             <div className="trackDetails-timeline-wrapper">
                 <div>
-                    <button onClick={props.onReplay}>&gt;</button>
+                    <button onClick={replay.play} disabled={replay.status === 'playing'}>▶️</button>
+                    <button onClick={replay.pause} disabled={replay.status !== 'playing'}>⏸</button>
+                    <button onClick={replay.stop} disabled={replay.status === 'stopped'}>⏹</button>
                 </div>
-                <TrackReplayInfo feature={feature} replayPosition={props.replayPosition}/>
+                <TrackReplayInfo feature={feature} replayPosition={replay.position}/>
             </div>
         </div>
     );
