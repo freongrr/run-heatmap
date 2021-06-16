@@ -176,9 +176,6 @@ class MapWrapper {
                 //     the UI calls setHighlightedTracks with the single track
                 //     and it shows the details of the track
 
-                console.info('Highlighting tracks: ' + trackIds);
-                this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId', ...trackIds]);
-
                 // Use the raw data because it has all the points and properties
                 const featureCollection = this.data.filter((fc) => {
                     return trackIds.includes(fc.features[0].properties.trackId)
@@ -334,6 +331,11 @@ class MapWrapper {
             .setData({type: 'FeatureCollection', features: pointFeatures});
         (this.map.getSource(SOURCE_TRACK_LINES) as GeoJSONSource)
             .setData({type: 'FeatureCollection', features: lineFeatures});
+    }
+
+    public setHighlightedFeatures(features: TrackFeature[]): void {
+        const trackIds = features.map((f) => f.properties.trackId);
+        this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId', ...trackIds]);
     }
 
     public enterReplay(feature: TrackFeature): void {
