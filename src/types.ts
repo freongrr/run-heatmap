@@ -5,13 +5,14 @@ import * as GeoJSON from 'geojson';
 export type RawDataView = 'Tracks' | 'Points' | 'Hidden';
 
 export interface TrackProperties {
+    // TODO : use the id on Feature directly
     trackId: string;
     description: string;
-    // TODO : use the first timestamp
+    // TODO : we don't need that since we have the timestamps
     time: string;
-    // TODO : use an emum
+    // TODO : use an enum?
     type: number;
-    // TODO : use a number of some kind of object
+    // TODO : use a number
     timestamps: string[];
 }
 

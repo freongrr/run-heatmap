@@ -1,10 +1,9 @@
 import * as turf from '@turf/turf';
 import mapboxgl, {GeoJSONSource, LngLatLike} from 'mapbox-gl';
-import {loadFromGpx} from '../utils/gpxConverter';
-import {traceUrls} from '../dataLoader';
 import {TOKEN} from './mapbox-token';
 import * as GeoJSON from 'geojson';
 import {RawDataView, TrackFeature, TrackFeatureCollection, TrackProperties} from '../types';
+import {formatDuration} from "../utils/formatTime";
 
 mapboxgl.accessToken = TOKEN;
 
@@ -36,13 +35,13 @@ const CENTER: [number, number] = [0, 0];
 class MapWrapper {
     private initialized = false;
     private map: mapboxgl.Map;
+    // TODO : this should probably not live here
     private data: TrackFeatureCollection[] = [];
     private skipCount = 8;
     private rawDataMode: RawDataView = 'Tracks';
+    // TODO : we could filter the data outside, or we could use a proper filter
     private yearFilter: number | null = null;
 
-    public onLoadFilesStart: () => void = NO_OP;
-    public onLoadFilesFinish: (e?: Error) => void = NO_OP;
     public onSelection: (features: TrackFeature[]) => void = NO_OP;
 
     constructor() {
@@ -61,7 +60,6 @@ class MapWrapper {
 
         this.map.on('load', () => {
             this.finishInitialization();
-            this.loadFiles();
         });
     }
 
@@ -228,26 +226,15 @@ class MapWrapper {
         });
 
         this.initialized = true;
+
+        this.refreshData();
     }
 
-    private loadFiles() {
-        this.onLoadFilesStart();
-
-        const keys = Array.from(traceUrls.keys()); //.slice(0, 50);
-
-        console.log(`Loading ${keys.length} files...`);
-        const promises = keys.map((f) => loadFromGpx(f, traceUrls.get(f)));
-        Promise.all(promises)
-            .then((data) => {
-                this.data = data;
-                this.onLoadFilesFinish();
-                this.refreshData();
-                console.log('Load complete');
-            })
-            .catch((e) => {
-                console.error('Loading failed', e);
-                this.onLoadFilesFinish(e);
-            });
+    public setData(data: TrackFeatureCollection[]): void {
+        this.data = data;
+        if (this.initialized) {
+            this.refreshData();
+        }
     }
 
     public setYearFilter(year: number | null): void {
@@ -284,6 +271,7 @@ class MapWrapper {
     }
 
     private refreshData() {
+        const start = new Date().getTime();
         const lineFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
         const pointFeatures: GeoJSON.Feature<GeoJSON.Point>[] = [];
 
@@ -326,11 +314,13 @@ class MapWrapper {
                 });
             });
 
-        console.log(`Rendering ${pointFeatures.length} points and ${lineFeatures.length} lines`);
         (this.map.getSource(SOURCE_TRACK_POINTS) as GeoJSONSource)
             .setData({type: 'FeatureCollection', features: pointFeatures});
         (this.map.getSource(SOURCE_TRACK_LINES) as GeoJSONSource)
             .setData({type: 'FeatureCollection', features: lineFeatures});
+
+        const end = new Date().getTime();
+        console.log(`Refreshed ${pointFeatures.length} points and ${lineFeatures.length} lines in ${formatDuration(end - start, true)}`);
     }
 
     public setHighlightedFeatures(features: TrackFeature[]): void {

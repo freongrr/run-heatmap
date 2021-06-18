@@ -2,6 +2,7 @@ import React from 'react';
 import {Replay, TrackFeature} from './types';
 import MapWrapper from './map';
 
+// TODO : move somewhere else
 export function useReplay(mapWrapper: MapWrapper, feature: TrackFeature | null): Replay {
     const [status, setStatus] = React.useState<'stopped' | 'playing' | 'paused'>('stopped');
     const [position, setPosition] = React.useState<number | null>(null);
@@ -46,13 +47,16 @@ export function useReplay(mapWrapper: MapWrapper, feature: TrackFeature | null):
             // TODO : start and finish slowly and accelerate in the middle
             if (position < feature.geometry.coordinates.length) {
                 mapWrapper.setReplayPosition(feature, position);
-                const timer = setTimeout(() => {
-                    setPosition(position + 1);
+                let cancelled = false;
+                setTimeout(() => {
+                    if (!cancelled) {
+                        setPosition(position + 1);
+                    }
                 }, 10);
                 return () => {
-                    console.log('Cancelling timer');
-                    clearTimeout(timer);
-                }
+                    //console.log('Cancelling timer');
+                    cancelled = true;
+                };
             } else {
                 setStatus('paused');
             }

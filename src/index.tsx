@@ -1,12 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './style.scss';
-import {RawDataView, TrackFeature} from './types';
+import {RawDataView, TrackFeature, TrackFeatureCollection} from './types';
 import MapControls from './components/MapControls';
 import LoadingOverlay from './components/LoadingOverlay';
 import TrackOverlay from './components/TrackOverlay';
 import MapWrapper from './map';
 import {useReplay} from './useReplay';
+import {traceUrls} from "./dataLoader";
+import {loadFromGpx} from './utils/gpxConverter';
+import {readFromDB, saveToDB} from "./utils/dbHelper";
+import {formatDuration} from "./utils/formatTime";
 
 const App = () => {
     const [mapWrapper] = React.useState(new MapWrapper());
@@ -20,16 +24,7 @@ const App = () => {
 
     const replay = useReplay(mapWrapper, activeFeature);
 
-    // TODO : move that down to a Component wrapping the map?
     React.useEffect(() => {
-        mapWrapper.onLoadFilesStart = () => setLoading(true);
-        mapWrapper.onLoadFilesFinish = (e?: Error) => {
-            if (e) {
-                setError(e.toString());
-            } else {
-                setLoading(false);
-            }
-        };
         mapWrapper.onSelection = (features) => {
             mapWrapper.setHighlightedFeatures(features);
             setSelectedFeatures(features);
@@ -55,6 +50,19 @@ const App = () => {
         }
     }, [mapWrapper, selectedFeatures, setActiveFeature]);
 
+    React.useEffect(() => {
+        setLoading(true);
+        loadFeatureCollections()
+            .then((dbCollections) => {
+                mapWrapper.setData(dbCollections);
+                setLoading(false);
+            })
+            .catch((e) => {
+                console.error('Loading failed', e);
+                setError(e.toString());
+            });
+    }, []);
+
     return (
         <>
             {loading && <LoadingOverlay error={error}/>}
@@ -74,6 +82,57 @@ const App = () => {
             />}
         </>
     );
+}
+
+// TODO : move all the data handling stuff elsewhere
+function loadFeatureCollections(): Promise<TrackFeatureCollection[]> {
+    return loadFromDB()
+        .then((dbCollections) => {
+            if (dbCollections.length > 0) {
+                return dbCollections;
+            } else {
+                return loadFromFiles()
+                    .then((fileCollections) => {
+                        const features = fileCollections.map((fc) => fc.features[0]);
+                        // We don't care if this succeeds or fails
+                        saveToDB(features)
+                            .then(() => {
+                                console.info(`Saved ${features.length} features to DB`);
+                            })
+                            .catch((e) => {
+                                console.error('Failed to save features to DB', e);
+                            });
+                        return fileCollections;
+                    });
+            }
+        });
+}
+
+function loadFromDB(): Promise<TrackFeatureCollection[]> {
+    const startTime = new Date().getTime();
+    return readFromDB()
+        .then((features) => {
+            const dbTime = new Date().getTime();
+            console.log(`Loaded ${features.length} from DB in ${formatDuration(dbTime - startTime, true)}`);
+            return features.map((f) => ({
+                type: 'FeatureCollection',
+                features: [f]
+            }));
+        });
+}
+
+function loadFromFiles(): Promise<TrackFeatureCollection[]> {
+    const startTime = new Date().getTime();
+    const keys = Array.from(traceUrls.keys()); //.slice(0, 50);
+
+    console.log(`Loading ${keys.length} files...`);
+    const promises = keys.map((f) => loadFromGpx(f, traceUrls.get(f)));
+    return Promise.all(promises)
+        .then((data) => {
+            const end = new Date().getTime();
+            console.log(`Load complete in ${formatDuration(end - startTime, true)}`);
+            return data;
+        });
 }
 
 const appElement = document.getElementById('app');

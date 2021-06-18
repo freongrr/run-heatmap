@@ -1,6 +1,7 @@
 import React from 'react';
 import * as turf from '@turf/turf';
 import {TrackFeature} from '../../types';
+import {formatDuration} from '../../utils/formatTime';
 
 interface Props {
     feature: TrackFeature;
@@ -41,27 +42,6 @@ const TrackReplayInfo: React.FC<Props> = (props) => {
             </div>
         </div>
     );
-}
-
-function formatDuration(durationInMillis: number): string {
-    let remainingInSeconds = durationInMillis / 1000;
-    const parts: string[] = [];
-    if (remainingInSeconds > 3600) {
-        const hours = Math.floor(remainingInSeconds / 3600);
-        remainingInSeconds = remainingInSeconds % 3600;
-        parts.push(hours + 'h');
-    }
-    if (parts.length > 0 || remainingInSeconds > 60) {
-        const minutes = Math.floor(remainingInSeconds / 60);
-        remainingInSeconds = remainingInSeconds % 60;
-        parts.push(padTo2(minutes) + 'm');
-    }
-    parts.push(padTo2(remainingInSeconds) + 's');
-    return parts.join(' ');
-}
-
-function padTo2(n: number): string {
-    return n < 10 ? '0' + n : '' + n;
 }
 
 export default TrackReplayInfo;
