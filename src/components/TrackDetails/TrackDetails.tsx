@@ -1,16 +1,17 @@
 import React from 'react';
-import {Replay, TrackFeature} from '../../types';
+import {TrackFeature} from '../../types';
 import {formatTime} from '../../utils/formatTime';
 import TrackReplayInfo from './TrackReplayInfo';
+import {Ticker} from '../../hooks/useTicker';
 
 interface Props {
     feature: TrackFeature;
-    replay: Replay;
+    ticker: Ticker;
     onDismiss: () => void;
 }
 
 const TrackDetails: React.FC<Props> = (props) => {
-    const {feature, replay} = props;
+    const {feature, ticker} = props;
 
     const onClickDismiss = React.useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
@@ -35,11 +36,11 @@ const TrackDetails: React.FC<Props> = (props) => {
 
             <div className="trackDetails-timeline-wrapper">
                 <div>
-                    <button onClick={replay.play} disabled={replay.status === 'playing'}>▶️</button>
-                    <button onClick={replay.pause} disabled={replay.status !== 'playing'}>⏸</button>
-                    <button onClick={replay.stop} disabled={replay.status === 'stopped'}>⏹</button>
+                    <button onClick={ticker.play} disabled={ticker.status === 'playing'}>▶️</button>
+                    <button onClick={ticker.pause} disabled={ticker.status !== 'playing'}>⏸</button>
+                    <button onClick={ticker.stop} disabled={ticker.status === 'stopped'}>⏹</button>
                 </div>
-                <TrackReplayInfo feature={feature} replayPosition={replay.position}/>
+                <TrackReplayInfo feature={feature} replayPosition={ticker.position}/>
             </div>
         </div>
     );

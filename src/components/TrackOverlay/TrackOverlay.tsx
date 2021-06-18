@@ -1,12 +1,13 @@
 import React from 'react';
-import {Replay, TrackFeature} from '../../types';
+import {TrackFeature} from '../../types';
 import TrackList from '../TrackList';
 import TrackDetails from '../TrackDetails';
+import {Ticker} from '../../hooks/useTicker';
 
 interface Props {
     selectedFeatures: TrackFeature[];
     activeFeature: TrackFeature | null;
-    replay: Replay;
+    ticker: Ticker;
     onActiveFeature: (f: TrackFeature | null) => void;
 }
 
@@ -18,7 +19,7 @@ const TrackOverlay: React.FC<Props> = (props) => {
             )}
             {props.activeFeature && <TrackDetails
                 feature={props.activeFeature}
-                replay={props.replay}
+                ticker={props.ticker}
                 onDismiss={() => props.onActiveFeature(null)}
             />}
         </div>

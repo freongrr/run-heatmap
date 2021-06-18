@@ -1,17 +1,27 @@
 import React from 'react';
-import {Replay, TrackFeature} from './types';
-import MapWrapper from './map';
 
-// TODO : move somewhere else
-export function useReplay(mapWrapper: MapWrapper, feature: TrackFeature | null): Replay {
+export interface Ticker {
+    readonly status: 'stopped' | 'playing' | 'paused';
+    readonly position: number;
+    readonly play: () => void;
+    readonly stop: () => void;
+    readonly pause: () => void
+}
+
+export function useTicker(
+    max: number | null,
+    onStart: () => void,
+    onTick: (i: number) => void,
+    onStop: () => void
+): Ticker {
     const [status, setStatus] = React.useState<'stopped' | 'playing' | 'paused'>('stopped');
     const [position, setPosition] = React.useState<number | null>(null);
 
     const play = React.useCallback(() => {
-        if (feature) {
+        if (max !== null) {
             if (status === 'stopped') {
                 console.log('Playing from 0');
-                mapWrapper.enterReplay(feature);
+                onStart();
                 setStatus('playing');
                 setPosition(0);
             } else if (status === 'paused') {
@@ -23,30 +33,30 @@ export function useReplay(mapWrapper: MapWrapper, feature: TrackFeature | null):
         } else {
             console.log('Not playing because no active feature');
         }
-    }, [mapWrapper, feature, status, setStatus, position, setPosition]);
+    }, [max, onStart, status, setStatus, position, setPosition]);
 
     const pause = React.useCallback(() => {
         if (status === 'playing') {
             setStatus('paused');
         }
-    }, [mapWrapper, status, setStatus, setPosition]);
+    }, [status, setStatus]);
 
     const stop = React.useCallback(() => {
         if (status !== 'stopped') {
-            console.log('Stopping replay from status ' + status + ' at ' + position);
-            mapWrapper.exitReplay();
+            console.log('Stopping playback from status ' + status + ' at ' + position);
+            onStop();
             setStatus('stopped');
             setPosition(null);
         } else {
             console.log('Not stopping because status is ' + status);
         }
-    }, [mapWrapper, status, setStatus, setPosition]);
+    }, [onStop, status, setStatus, setPosition]);
 
     React.useEffect(() => {
-        if (feature && status === 'playing') {
+        if (max !== null && status === 'playing') {
             // TODO : start and finish slowly and accelerate in the middle
-            if (position < feature.geometry.coordinates.length) {
-                mapWrapper.setReplayPosition(feature, position);
+            if (position < max) {
+                onTick(position);
                 let cancelled = false;
                 setTimeout(() => {
                     if (!cancelled) {
@@ -60,10 +70,10 @@ export function useReplay(mapWrapper: MapWrapper, feature: TrackFeature | null):
             } else {
                 setStatus('paused');
             }
-        } else if (status !== 'stopped' && !feature) {
+        } else if (status !== 'stopped' && max === null) {
             stop();
         }
-    }, [mapWrapper, feature, status, setStatus, position, setPosition]);
+    }, [max, onTick, status, setStatus, position, setPosition]);
 
     return {status, position, play, pause, stop};
 }

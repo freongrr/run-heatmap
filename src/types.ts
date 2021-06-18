@@ -18,11 +18,3 @@ export interface TrackProperties {
 
 export type TrackFeatureCollection = GeoJSON.FeatureCollection<GeoJSON.LineString, TrackProperties>;
 export type TrackFeature = GeoJSON.Feature<GeoJSON.LineString, TrackProperties>;
-
-export interface Replay {
-    readonly status: 'stopped' | 'playing' | 'paused';
-    readonly position: number;
-    readonly play: () => void;
-    readonly stop: () => void;
-    readonly pause: () => void
-}

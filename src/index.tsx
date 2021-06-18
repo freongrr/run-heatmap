@@ -6,11 +6,11 @@ import MapControls from './components/MapControls';
 import LoadingOverlay from './components/LoadingOverlay';
 import TrackOverlay from './components/TrackOverlay';
 import MapWrapper from './map';
-import {useReplay} from './useReplay';
 import {traceUrls} from "./dataLoader";
 import {loadFromGpx} from './utils/gpxConverter';
 import {readFromDB, saveToDB} from "./utils/dbHelper";
 import {formatDuration} from "./utils/formatTime";
+import {useTicker} from "./hooks/useTicker";
 
 const App = () => {
     const [mapWrapper] = React.useState(new MapWrapper());
@@ -21,8 +21,6 @@ const App = () => {
     const [rawDataView, setRawDataView] = React.useState<RawDataView>('Tracks');
     const [selectedFeatures, setSelectedFeatures] = React.useState<TrackFeature[]>([]);
     const [activeFeature, setActiveFeature] = React.useState<TrackFeature | null>(null);
-
-    const replay = useReplay(mapWrapper, activeFeature);
 
     React.useEffect(() => {
         mapWrapper.onSelection = (features) => {
@@ -63,6 +61,19 @@ const App = () => {
             });
     }, []);
 
+    const ticker = useTicker(
+        activeFeature ? activeFeature.geometry.coordinates.length : null,
+        React.useCallback(() => {
+            mapWrapper.enterReplay(activeFeature);
+        }, [mapWrapper, activeFeature]),
+        React.useCallback((i: number) => {
+            mapWrapper.setReplayPosition(activeFeature, i);
+        }, [mapWrapper, activeFeature]),
+        React.useCallback(() => {
+            mapWrapper.exitReplay();
+        }, [mapWrapper])
+    );
+
     return (
         <>
             {loading && <LoadingOverlay error={error}/>}
@@ -77,7 +88,7 @@ const App = () => {
             {!loading && <TrackOverlay
                 selectedFeatures={selectedFeatures}
                 activeFeature={activeFeature}
-                replay={replay}
+                ticker={ticker}
                 onActiveFeature={onActivateOrDeactivateFeature}
             />}
         </>

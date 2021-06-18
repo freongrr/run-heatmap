@@ -18,13 +18,16 @@
     & div:nth-child(1) {
       flex-shrink: 0;
       align-self: center;
-      margin-right: 0.3em;
 
       & button {
         padding: 0;
         border: none;
         background: none;
         font-size: larger;
+      }
+
+      & button:last-child {
+        padding-right: 0.3em;
       }
     }
 
