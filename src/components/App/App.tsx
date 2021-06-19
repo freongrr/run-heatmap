@@ -7,8 +7,7 @@ import Map from '../Map';
 import {useTicker} from '../../hooks/useTicker';
 import {readFromDB, saveToDB} from '../../utils/dbHelper';
 import {formatDuration} from '../../utils/formatTime';
-import {traceUrls} from '../../dataLoader';
-import {loadFromGpxData, loadFromGpxUrl} from '../../utils/gpxConverter';
+import {loadFromGpxData} from '../../utils/gpxConverter';
 import {fsEntryToFile, readFsDirectory} from '../../utils/fileUtils';
 
 const App = () => {
@@ -26,7 +25,7 @@ const App = () => {
 
     React.useEffect(() => {
         setLoading(true);
-        loadFeatureCollections()
+        loadFromDB()
             .then((features) => {
                 setAllData(features)
                 setLoading(false);
@@ -101,12 +100,14 @@ const App = () => {
     const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
 
+        const startTime = new Date().getTime();
         const importedFeatures = await readDataTransferItems(e.dataTransfer.items);
         const newFeatures = importedFeatures.filter((f) => !allData.find((x) => x.id === f.id));
         if (newFeatures.length > 0) {
-            console.info(`Adding ${newFeatures.length} features (to ${allData.length} existing ones)`);
-            const newData = allData.concat(newFeatures);
-            setAllData(newData);
+            const endTime = new Date().getTime();
+            console.log(`Imported ${newFeatures.length} features in ${formatDuration(endTime - startTime, true)}`);
+            setAllData(allData.concat(newFeatures));
+
             // We don't care if this succeeds or fails
             saveToDB(newFeatures)
                 .then(() => {
@@ -169,30 +170,6 @@ const App = () => {
     );
 }
 
-// TODO : move all the data handling stuff elsewhere
-function loadFeatureCollections(): Promise<TrackFeature[]> {
-    return loadFromDB()
-        .then((dbFeatures) => {
-            if (dbFeatures.length > 0) {
-                return dbFeatures;
-            } else {
-                // return loadFromFiles()
-                //     .then((fileFeatures) => {
-                //         // We don't care if this succeeds or fails
-                //         saveToDB(fileFeatures)
-                //             .then(() => {
-                //                 console.info(`Saved ${fileFeatures.length} features to DB`);
-                //             })
-                //             .catch((e) => {
-                //                 console.error('Failed to save features to DB', e);
-                //             });
-                //         return fileFeatures;
-                //     });
-                return Promise.resolve([]);
-            }
-        });
-}
-
 function loadFromDB(): Promise<TrackFeature[]> {
     const startTime = new Date().getTime();
     return readFromDB()
@@ -201,33 +178,6 @@ function loadFromDB(): Promise<TrackFeature[]> {
             console.log(`Loaded ${features.length} from DB in ${formatDuration(dbTime - startTime, true)}`);
             return features;
         });
-}
-
-function loadFromFiles(): Promise<TrackFeature[]> {
-    const startTime = new Date().getTime();
-    const keys = Array.from(traceUrls.keys()); //.slice(0, 50);
-
-    console.log(`Loading ${keys.length} files...`);
-    const promises = keys.map((f) => loadFromGpxUrl(f, traceUrls.get(f)));
-    return Promise.all(promises)
-        .then((data) => {
-            const end = new Date().getTime();
-            console.log(`Load complete in ${formatDuration(end - startTime, true)}`);
-            return data.map((fc) => fc.features[0]);
-        });
-}
-
-// This is the standard API. It supports multiple files, but not folders
-function readDataTransferFiles(dataTransferFiles: FileList): Promise<TrackFeature[]> {
-    const promises: Array<Promise<TrackFeature[]>> = [];
-    for (let i = 0; i < dataTransferFiles.length; i++) {
-        const f = dataTransferFiles[i];
-        promises.push(loadFromLocalFile(f));
-    }
-
-    return Promise.all(promises).then((results: TrackFeature[][]) => {
-        return results.reduce((a, b) => a.concat(b), [] as TrackFeature[]);
-    });
 }
 
 // HACK : This is an experimental / deprecated API that supports folders

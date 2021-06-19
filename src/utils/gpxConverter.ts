@@ -1,13 +1,5 @@
 import {TrackFeature, TrackFeatureCollection} from '../types';
 
-export function loadFromGpxUrl(fileName: string, url: string): Promise<TrackFeatureCollection> {
-    return fetch(url)
-        .then((r) => r.text())
-        .then((d) => {
-            return loadFromGpxData(fileName, d);
-        });
-}
-
 export function loadFromGpxData(fileName: string, data: string): Promise<TrackFeatureCollection> {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(data, 'text/xml');
