@@ -1,14 +1,14 @@
 import {TrackFeature, TrackFeatureCollection} from '../types';
 
-export function loadFromGpx(fileName: string, url: string): Promise<TrackFeatureCollection> {
+export function loadFromGpxUrl(fileName: string, url: string): Promise<TrackFeatureCollection> {
     return fetch(url)
         .then((r) => r.text())
         .then((d) => {
-            return doConvert(d, fileName);
+            return loadFromGpxData(fileName, d);
         });
 }
 
-function doConvert(data: string, fileName: string): TrackFeatureCollection {
+export function loadFromGpxData(fileName: string, data: string): Promise<TrackFeatureCollection> {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(data, 'text/xml');
     const rootElement = xmlDoc.getElementsByTagName('gpx')[0];
@@ -42,10 +42,10 @@ function doConvert(data: string, fileName: string): TrackFeatureCollection {
         }
     };
 
-    return {
+    return Promise.resolve({
         type: 'FeatureCollection',
         features: [feature]
-    };
+    });
 }
 
 function getChildElementValue(element: Element, tagName: string): string {

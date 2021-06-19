@@ -1,17 +1,29 @@
 body {
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
 }
 
 a, a:visited {
-    color: #008
+  color: #008
 }
 
 // TODO : move?
 #map {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 100%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+}
+
+.dropZone {
+  position: absolute;
+  bottom: 0;
+  width: 64px;
+  height: 64px;
+  background-color: white;
+
+  &_over {
+    background-color: lime;
+  }
 }
