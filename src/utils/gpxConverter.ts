@@ -11,12 +11,7 @@ export function loadFromGpx(fileName: string, url: string): Promise<TrackFeature
 function doConvert(data: string, fileName: string): TrackFeatureCollection {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(data, 'text/xml');
-
     const rootElement = xmlDoc.getElementsByTagName('gpx')[0];
-
-    const metadataElement = rootElement.getElementsByTagName('metadata')[0];
-    const timeString = getChildElementValue(metadataElement, 'time');
-
     const trackElement = rootElement.getElementsByTagName('trk')[0];
     const typeId = +getChildElementValue(trackElement, 'type');
     const description = getChildElementValue(trackElement, 'name');
@@ -26,14 +21,14 @@ function doConvert(data: string, fileName: string): TrackFeatureCollection {
         .getElementsByTagName('trkpt');
 
     const feature: TrackFeature = {
+        id: +fileName.replace('.gpx', ''),
         type: 'Feature',
         properties: {
-            trackId: fileName.replace('.gpx', ''),
             description: description,
-            time: timeString,
             type: typeId,
             timestamps: Array.from(pointElements).map((e) => {
-                return getChildElementValue(e, 'time');
+                const dateString = getChildElementValue(e, 'time');
+                return new Date(dateString).getTime();
             })
         },
         geometry: {

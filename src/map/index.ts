@@ -2,8 +2,8 @@ import * as turf from '@turf/turf';
 import mapboxgl, {GeoJSONSource, LngLatLike} from 'mapbox-gl';
 import {TOKEN} from './mapbox-token';
 import * as GeoJSON from 'geojson';
-import {RawDataView, TrackFeature, TrackFeatureCollection, TrackProperties} from '../types';
-import {formatDuration} from "../utils/formatTime";
+import {RawDataView, TrackFeature, TrackFeatureCollection, TYPE_RUN} from '../types';
+import {formatDuration} from '../utils/formatTime';
 
 mapboxgl.accessToken = TOKEN;
 
@@ -151,41 +151,21 @@ class MapWrapper {
             }
         );
 
-        // TODO : move that out (or at least move the even handling part out)
         this.map.on('click', LAYER_TRACK_LINES, (e) => {
-            const trackIds = e.features.map((f) => {
-                return (f.properties as TrackProperties).trackId;
-            });
-            if (trackIds.length > 0) {
+            const featureIds = e.features.map((f) => f.id);
+            if (featureIds.length > 0) {
                 e.preventDefault();
 
-                // TODO : instead of setting the selection here
-                // we should:
-                // - fire an event with the feature(s)
-                // - let the UI store the selection
-                // - UI calls setHighlightedTracks on the map
-                // - when there is only one track, show the details
-                // - when there are multiple tracks, show the list
-                //   - when the user move-over a track in the list,
-                //     the UI calls setHighlightedTracks with this track
-                //   - when the user move-out
-                //     the UI calls setHighlightedTracks with all the tracks
-                //   - when the user clicks on a track in the list
-                //     the UI calls setHighlightedTracks with the single track
-                //     and it shows the details of the track
-
                 // Use the raw data because it has all the points and properties
-                const featureCollection = this.data.filter((fc) => {
-                    return trackIds.includes(fc.features[0].properties.trackId)
-                });
-                this.onSelection(featureCollection.map((fc) => fc.features[0]));
+                const matchingFeatures = this.data.map((fc) => fc.features[0])
+                    .filter((f) => featureIds.includes(f.id));
+                this.onSelection(matchingFeatures);
             }
         });
 
         this.map.on('click', (e) => {
-            // HACK - this is not in the API
+            // HACK : _defaultPrevented is not in the public API
             if (!e._defaultPrevented) {
-                this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId']);
                 this.onSelection([]);
             }
         });
@@ -195,7 +175,7 @@ class MapWrapper {
         this.map.on('mouseleave', LAYER_TRACK_LINES, () => this.map.getCanvas().style.cursor = '');
 
         // Empty filter initially
-        this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId']);
+        this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['boolean', false]);
 
         // Show/hide layers (we have to do that because the setter can be called before we get here)
         this.map.setLayoutProperty(LAYER_TRACK_LINES, 'visibility', this.rawDataMode === 'Tracks' ? 'visible' : 'none');
@@ -275,11 +255,17 @@ class MapWrapper {
         const lineFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
         const pointFeatures: GeoJSON.Feature<GeoJSON.Point>[] = [];
 
+        const startOfYear = this.yearFilter && new Date(`${this.yearFilter}-01-01`).getTime();
+        const startOfNextYear = this.yearFilter && new Date(`${this.yearFilter}-01-01`).getTime();
         this.data
             .filter((fc) => {
-                const {type, time} = fc.features[0].properties;
+                const type = fc.features[0].properties.type;
+                const timestamp = fc.features[0].properties.timestamps[0];
                 // Only type 9 (Run) and only current year (or all)
-                return type === 9 && this.yearFilter === null || time.startsWith(this.yearFilter + '-');
+                return type === TYPE_RUN && (
+                    this.yearFilter === null ||
+                    timestamp >= startOfYear && timestamp < startOfNextYear
+                );
             })
             // Merge features from all feature collections
             .map((fc) => {
@@ -324,8 +310,12 @@ class MapWrapper {
     }
 
     public setHighlightedFeatures(features: TrackFeature[]): void {
-        const trackIds = features.map((f) => f.properties.trackId);
-        this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['in', 'trackId', ...trackIds]);
+        const featureIds = features.map((f) => f.id);
+        if (features.length > 0) {
+            this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['match', ['id'], featureIds, true, false]);
+        } else {
+            this.map.setFilter(LAYER_TRACK_LINES_HIGHLIGHTED, ['boolean', false]);
+        }
     }
 
     public enterReplay(feature: TrackFeature): void {

@@ -1,20 +1,20 @@
 import * as GeoJSON from 'geojson';
 
-// TODO : fine a good place for these types
-
 export type RawDataView = 'Tracks' | 'Points' | 'Hidden';
 
+// Can't use an enum since I don't know the other types
+export const TYPE_RUN = 9;
+
 export interface TrackProperties {
-    // TODO : use the id on Feature directly
-    trackId: string;
     description: string;
-    // TODO : we don't need that since we have the timestamps
-    time: string;
-    // TODO : use an enum?
     type: number;
-    // TODO : use a number
-    timestamps: string[];
+    timestamps: number[];
 }
 
-export type TrackFeatureCollection = GeoJSON.FeatureCollection<GeoJSON.LineString, TrackProperties>;
-export type TrackFeature = GeoJSON.Feature<GeoJSON.LineString, TrackProperties>;
+export interface TrackFeatureCollection extends GeoJSON.FeatureCollection<GeoJSON.LineString, TrackProperties> {
+    features: TrackFeature[];
+}
+
+export interface TrackFeature extends GeoJSON.Feature<GeoJSON.LineString, TrackProperties> {
+    id: number;
+}

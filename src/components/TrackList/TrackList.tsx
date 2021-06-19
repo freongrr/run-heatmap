@@ -1,6 +1,6 @@
 import React from 'react';
 import {TrackFeature} from '../../types';
-import {formatTime} from '../../utils/formatTime';
+import {formatTimestampAsDate} from '../../utils/formatTime';
 
 interface Props {
     selectedFeatures: TrackFeature[];
@@ -24,14 +24,15 @@ const TrackList: React.FC<Props> = (props) => {
         };
     };
 
+    // TODO : highlight the track on mouse over?
     return (
         <div className="trackList">
             <h2>{title}</h2>
             {selectedFeatures.slice(0, Math.min(selectedFeatures.length, 10)).map((f) => {
                 return (
-                    <div key={f.properties.trackId}>
+                    <div key={f.id}>
                         <a href="#" onClick={makeClickHandler(f)}>
-                            {f.properties.description} ({formatTime(f.properties.time)})
+                            {f.properties.description} ({formatTimestampAsDate(f.properties.timestamps[0])})
                         </a>
                     </div>
                 );

@@ -33,11 +33,9 @@ export function saveToDB(features: TrackFeature[]): Promise<void> {
 
                 const objectStore = transaction.objectStore(STORE_FEATURES);
                 features.forEach((f) => {
-                    // TODO : it would be nice to have the id directly on the feature
-                    const featureWithId = {...f, id: f.properties.trackId};
-                    const request = objectStore.add(featureWithId);
+                    const request = objectStore.add(f);
                     request.onerror = () => {
-                        error = new Error(`Failed to write feature ${featureWithId.id}: ${request.error?.message}`);
+                        error = new Error(`Failed to write feature ${f.id}: ${request.error?.message}`);
                     }
                 });
             })

@@ -1,7 +1,13 @@
-export function formatTime(timeString: string): string {
-    // Raw format: 2014-12-07T05:54:07Z)
-    // TODO : better format including local time?
-    return timeString.substring(0, 10)
+export function formatTimestampAsDate(timestamp: number): string {
+    const d = new Date(timestamp);
+    return `${d.getFullYear()}-${padWith0(d.getMonth() + 1)}-${padWith0(d.getDate())}`;
+}
+
+export function formatTimestampAsDatetime(timestamp: number): string {
+    const d = new Date(timestamp);
+    const date = `${d.getFullYear()}-${padWith0(d.getMonth() + 1)}-${padWith0(d.getDate())}`;
+    const time = `${padWith0(d.getHours())}:${padWith0(d.getMinutes())}:${padWith0(d.getSeconds())}`;
+    return date + ' ' + time;
 }
 
 export function formatDuration(durationInMillis: number, includeMillis = false): string {

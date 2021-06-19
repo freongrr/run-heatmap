@@ -1,6 +1,6 @@
 import React from 'react';
 import {TrackFeature} from '../../types';
-import {formatTime} from '../../utils/formatTime';
+import {formatTimestampAsDatetime} from '../../utils/formatTime';
 import TrackReplayInfo from './TrackReplayInfo';
 import {Ticker} from '../../hooks/useTicker';
 
@@ -25,14 +25,14 @@ const TrackDetails: React.FC<Props> = (props) => {
                     <a href="#" onClick={onClickDismiss}>← Back</a>
                 </div>
                 <div className="trackDetails-links-right">
-                    <a href={'https://www.strava.com/activities/' + feature.properties.trackId} target="_blank">
+                    <a href={'https://www.strava.com/activities/' + feature.id} target="_blank">
                         Open in Strava ↑
                     </a>
                 </div>
             </div>
 
             <h2>{feature.properties.description}</h2>
-            <div className="trackDetails-datetime">{formatTime(feature.properties.time)}</div>
+            <div className="trackDetails-datetime">{formatTimestampAsDatetime(feature.properties.timestamps[0])}</div>
 
             <div className="trackDetails-timeline-wrapper">
                 <div>
