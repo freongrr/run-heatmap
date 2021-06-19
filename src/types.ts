@@ -12,7 +12,7 @@ export interface TrackProperties {
 }
 
 export interface TrackFeatureCollection extends GeoJSON.FeatureCollection<GeoJSON.LineString, TrackProperties> {
-    features: TrackFeature[];
+    features: [TrackFeature];
 }
 
 export interface TrackFeature extends GeoJSON.Feature<GeoJSON.LineString, TrackProperties> {

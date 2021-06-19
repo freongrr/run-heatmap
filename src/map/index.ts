@@ -2,7 +2,7 @@ import * as turf from '@turf/turf';
 import mapboxgl, {GeoJSONSource, LngLatLike} from 'mapbox-gl';
 import {TOKEN} from './mapbox-token';
 import * as GeoJSON from 'geojson';
-import {RawDataView, TrackFeature, TrackFeatureCollection, TYPE_RUN} from '../types';
+import {RawDataView, TrackFeature} from '../types';
 import {formatDuration} from '../utils/formatTime';
 
 mapboxgl.accessToken = TOKEN;
@@ -33,22 +33,17 @@ const EMPTY_FEATURE_COLLECTION: GeoJSON.FeatureCollection = {
 const CENTER: [number, number] = [0, 0];
 
 class MapWrapper {
-    private initialized = false;
     private map: mapboxgl.Map;
-    // TODO : this should probably not live here
-    private data: TrackFeatureCollection[] = [];
     private skipCount = 8;
     private rawDataMode: RawDataView = 'Tracks';
-    // TODO : we could filter the data outside, or we could use a proper filter
-    private yearFilter: number | null = null;
 
-    public onSelection: (features: TrackFeature[]) => void = NO_OP;
+    public onSelection: (featureIds: number[]) => void = NO_OP;
 
     constructor() {
         // Nothing (for now?)
     }
 
-    public init(containerId: string): void {
+    public init(containerId: string): Promise<void> {
         this.map = new mapboxgl.Map({
             container: containerId,
             // TODO : drop down to change style
@@ -58,8 +53,15 @@ class MapWrapper {
             zoom: 12
         });
 
-        this.map.on('load', () => {
-            this.finishInitialization();
+        return new Promise((resolve, reject) => {
+            this.map.on('load', () => {
+                try {
+                    this.finishInitialization();
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            });
         });
     }
 
@@ -152,14 +154,10 @@ class MapWrapper {
         );
 
         this.map.on('click', LAYER_TRACK_LINES, (e) => {
-            const featureIds = e.features.map((f) => f.id);
+            const featureIds = e.features.map((f) => +f.id);
             if (featureIds.length > 0) {
                 e.preventDefault();
-
-                // Use the raw data because it has all the points and properties
-                const matchingFeatures = this.data.map((fc) => fc.features[0])
-                    .filter((f) => featureIds.includes(f.id));
-                this.onSelection(matchingFeatures);
+                this.onSelection(featureIds);
             }
         });
 
@@ -204,101 +202,63 @@ class MapWrapper {
                 'line-width': 5
             }
         });
-
-        this.initialized = true;
-
-        this.refreshData();
-    }
-
-    public setData(data: TrackFeatureCollection[]): void {
-        this.data = data;
-        if (this.initialized) {
-            this.refreshData();
-        }
-    }
-
-    public setYearFilter(year: number | null): void {
-        this.yearFilter = year;
-        if (this.initialized) {
-            this.refreshData();
-        }
     }
 
     public setDataSampling(value: number): void {
         this.skipCount = value;
-        if (this.initialized) {
-            this.refreshData();
-            this.map.setPaintProperty(LAYER_HEATMAP, 'heatmap-weight', getHeatmapWeight(value));
-        }
+        this.map.setPaintProperty(LAYER_HEATMAP, 'heatmap-weight', getHeatmapWeight(value));
     }
 
     public setRawDataRender(value: RawDataView): void {
         this.rawDataMode = value;
 
-        if (this.initialized) {
-            this.map.setLayoutProperty(
-                LAYER_TRACK_LINES,
-                'visibility',
-                value === 'Tracks' ? 'visible' : 'none'
-            );
+        this.map.setLayoutProperty(
+            LAYER_TRACK_LINES,
+            'visibility',
+            value === 'Tracks' ? 'visible' : 'none'
+        );
 
-            this.map.setLayoutProperty(
-                LAYER_TRACK_POINTS,
-                'visibility',
-                value === 'Points' ? 'visible' : 'none'
-            );
-        }
+        this.map.setLayoutProperty(
+            LAYER_TRACK_POINTS,
+            'visibility',
+            value === 'Points' ? 'visible' : 'none'
+        );
     }
 
-    private refreshData() {
+    public setData(features: TrackFeature[]): void {
         const start = new Date().getTime();
         const lineFeatures: GeoJSON.Feature<GeoJSON.LineString>[] = [];
         const pointFeatures: GeoJSON.Feature<GeoJSON.Point>[] = [];
 
-        const startOfYear = this.yearFilter && new Date(`${this.yearFilter}-01-01`).getTime();
-        const startOfNextYear = this.yearFilter && new Date(`${this.yearFilter}-01-01`).getTime();
-        this.data
-            .filter((fc) => {
-                const type = fc.features[0].properties.type;
-                const timestamp = fc.features[0].properties.timestamps[0];
-                // Only type 9 (Run) and only current year (or all)
-                return type === TYPE_RUN && (
-                    this.yearFilter === null ||
-                    timestamp >= startOfYear && timestamp < startOfNextYear
-                );
-            })
-            // Merge features from all feature collections
-            .map((fc) => {
-                fc.features.forEach((f) => {
-                    const lineFeature = {
-                        ...f,
+        features.forEach((f) => {
+            const lineFeature = {
+                ...f,
+                geometry: {
+                    ...f.geometry,
+                    coordinates: [] as GeoJSON.Position[]
+                }
+            };
+
+            // Sample points
+            f.geometry.coordinates
+                .filter((c, i) => {
+                    return i % this.skipCount === 0;
+                })
+                .forEach((c) => {
+                    const [lon, lat] = c;
+                    lineFeature.geometry.coordinates.push([lon, lat]);
+                    pointFeatures.push({
+                        type: 'Feature',
+                        properties: {},
                         geometry: {
-                            ...f.geometry,
-                            coordinates: [] as GeoJSON.Position[]
+                            type: 'Point',
+                            coordinates: [lon, lat, 0.0]
                         }
-                    };
-
-                    // Sample points
-                    f.geometry.coordinates
-                        .filter((c, i) => {
-                            return i % this.skipCount === 0;
-                        })
-                        .forEach((c) => {
-                            const [lon, lat] = c;
-                            lineFeature.geometry.coordinates.push([lon, lat]);
-                            pointFeatures.push({
-                                type: 'Feature',
-                                properties: {},
-                                geometry: {
-                                    type: 'Point',
-                                    coordinates: [lon, lat, 0.0]
-                                }
-                            });
-                        });
-
-                    lineFeatures.push(lineFeature);
+                    });
                 });
-            });
+
+            lineFeatures.push(lineFeature);
+        });
 
         (this.map.getSource(SOURCE_TRACK_POINTS) as GeoJSONSource)
             .setData({type: 'FeatureCollection', features: pointFeatures});
@@ -318,6 +278,21 @@ class MapWrapper {
         }
     }
 
+    public setReplayedFeature(feature: TrackFeature | null): void {
+        if (feature === null) {
+            this.exitReplay();
+        } else {
+            if (feature.geometry.coordinates.length === 1) {
+                this.enterReplay(feature);
+            } else {
+                (this.map.getSource(SOURCE_SINGLE_TRACK) as GeoJSONSource)
+                    .setData({type: 'FeatureCollection', features: [feature]});
+                const lastPoint = feature.geometry.coordinates[feature.geometry.coordinates.length - 1];
+                this.map.panTo(lastPoint as LngLatLike);
+            }
+        }
+    }
+
     public enterReplay(feature: TrackFeature): void {
         const coordinates = feature.geometry.coordinates;
 
@@ -333,22 +308,6 @@ class MapWrapper {
         });
 
         // this.map.setPitch(30);
-    }
-
-    public setReplayPosition(feature: TrackFeature, position: number): void {
-        const coordinates = feature.geometry.coordinates;
-
-        const clone = {
-            ...feature,
-            geometry: {
-                ...feature.geometry,
-                coordinates: feature.geometry.coordinates.slice(0, position)
-            }
-        };
-
-        (this.map.getSource(SOURCE_SINGLE_TRACK) as GeoJSONSource)
-            .setData({type: 'FeatureCollection', features: [clone]});
-        this.map.panTo(coordinates[position] as LngLatLike);
     }
 
     public exitReplay(): void {
