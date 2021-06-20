@@ -8,7 +8,7 @@ import {useTicker} from '../../hooks/useTicker';
 import {readFromDB, saveToDB} from '../../utils/dbHelper';
 import {formatDuration} from '../../utils/formatTime';
 import {loadFromGpxData} from '../../utils/gpxConverter';
-import {fsEntryToFile, readFsDirectory} from '../../utils/fileUtils';
+import DropZone from '../DropZone';
 
 const App = () => {
     const [allData, setAllData] = React.useState<TrackFeature[]>([]);
@@ -94,16 +94,16 @@ const App = () => {
         }
     }, [selectedFeatures, setActiveFeature, setHighlightedFeatures]);
 
-    const [dropOver, setDropOver] = React.useState(false);
 
-    // TODO : prevent concurrent imports
-    const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-
+    const onDrop = React.useCallback(async (files: File[]) => {
         const startTime = new Date().getTime();
-        const importedFeatures = await readDataTransferItems(e.dataTransfer.items);
-        const newFeatures = importedFeatures.filter((f) => !allData.find((x) => x.id === f.id));
-        if (newFeatures.length > 0) {
+        const newFeatures = (await Promise.all(files.map((f) => loadFromFile(f))))
+            .reduce((a, b) => a.concat(b), [])
+            .filter((f) => !allData.find((x) => x.id === f.id));
+
+        if (newFeatures.length === 0) {
+            console.info(`No new features in import`);
+        } else {
             const endTime = new Date().getTime();
             console.log(`Imported ${newFeatures.length} features in ${formatDuration(endTime - startTime, true)}`);
             setAllData(allData.concat(newFeatures));
@@ -116,23 +116,8 @@ const App = () => {
                 .catch((e) => {
                     console.error('Failed to save features to DB', e);
                 });
-        } else {
-            console.info(`No new features in import`);
         }
-
-        setDropOver(false);
-    };
-
-    const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        // TODO : verify if the file is a gpx (or geojson)
-        e.preventDefault();
-        setDropOver(true);
-    };
-
-    const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setDropOver(false);
-    };
+    }, [allData, setAllData]);
 
     return (
         <>
@@ -144,13 +129,7 @@ const App = () => {
                 rawDataView={rawDataView}
                 onSelectFeatures={onSelectFeatures}
             />
-            <div className={'dropZone' + (dropOver ? ' dropZone_over' : '')}
-                 onDragOver={onDragOver}
-                 onDragLeave={onDragLeave}
-                 onDrop={onDrop}
-            >
-                Drop files here
-            </div>
+            <DropZone onDrop={onDrop}/>
             {loading && <LoadingOverlay error={error}/>}
             {!loading && <MapControls
                 year={year}
@@ -180,27 +159,7 @@ function loadFromDB(): Promise<TrackFeature[]> {
         });
 }
 
-// HACK : This is an experimental / deprecated API that supports folders
-async function readDataTransferItems(dataTransferItems: DataTransferItemList): Promise<TrackFeature[]> {
-    const entries = [];
-    for (let i = 0; i < dataTransferItems.length; i++) {
-        const entry = dataTransferItems[i].webkitGetAsEntry();
-        if (entry.isDirectory) {
-            entries.push(...(await readFsDirectory(entry)));
-        } else if (entry.isFile) {
-            entries.push(entry);
-        }
-    }
-
-    const results = await Promise.all(entries.map(async (e) => {
-        const file = await fsEntryToFile(e);
-        return loadFromLocalFile(file);
-    }));
-
-    return results.reduce((a, b) => a.concat(b), [] as TrackFeature[]);
-}
-
-function loadFromLocalFile(file: File): Promise<TrackFeature[]> {
+function loadFromFile(file: File): Promise<TrackFeature[]> {
     if (file.name.endsWith('.gpx')) {
         return file.text().then((txt) => {
             return loadFromGpxData(file.name, txt).then((fc) => {

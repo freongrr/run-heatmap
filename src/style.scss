@@ -15,15 +15,3 @@ a, a:visited {
   bottom: 0;
   width: 100%;
 }
-
-.dropZone {
-  position: absolute;
-  bottom: 0;
-  width: 64px;
-  height: 64px;
-  background-color: white;
-
-  &_over {
-    background-color: lime;
-  }
-}
