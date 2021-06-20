@@ -37,7 +37,7 @@ const DropZone: React.FC<Props> = (props) => {
 
     return (
         <div className={classes.join(' ')} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
-            Drop GPX here
+            📂 Import GPX file(s)
         </div>
     );
 };

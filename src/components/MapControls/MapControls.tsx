@@ -2,6 +2,7 @@ import React from 'react';
 import {RawDataView} from '../../types';
 
 interface Props {
+    disabled: boolean;
     year: number | null;
     onSelectYear: (v: number | null) => void;
     sampling: number;
@@ -10,7 +11,6 @@ interface Props {
     onSelectRawDataView: (v: RawDataView) => void;
 }
 
-// TODO : split into MapControls and ControlOverlay?
 const MapControls: React.FC<Props> = (props) => {
     const years = [];
     for (let y = 2021; y >= 2013; y--) {
@@ -35,33 +35,45 @@ const MapControls: React.FC<Props> = (props) => {
 
     return (
         <div className="mapControls">
-            <span className="control">
+            <div className="control">
                 <label>
                     Year:
-                    <select value={props.year === null ? '' : props.year} onChange={onSelectYear}>
+                    <select
+                        value={props.year === null ? '' : props.year}
+                        onChange={onSelectYear}
+                        disabled={props.disabled}
+                    >
                         <option value="">All</option>
                         {years.map((y) => <option key={y} value={String(y)}>{y}</option>)}
                     </select>
                 </label>
-            </span>
-            <span className="control">
+            </div>
+            <div className="control">
                 <label>
                     Data sampling:
-                    <select value={props.sampling === null ? '' : props.sampling} onChange={onSelectSamplingRate}>
+                    <select
+                        value={props.sampling === null ? '' : props.sampling}
+                        onChange={onSelectSamplingRate}
+                        disabled={props.disabled}
+                    >
                         {samplingRates.map((r) => <option key={r} value={String(r)}>1/{r}</option>)}
                     </select>
                 </label>
-            </span>
-            <span className="control">
+            </div>
+            <div className="control">
                 <label>
                     Raw data:
-                    <select value={props.rawDataView} onChange={onSelectRawDataView}>
+                    <select
+                        value={props.rawDataView}
+                        onChange={onSelectRawDataView}
+                        disabled={props.disabled}
+                    >
                         <option value="Hidden">Hidden</option>
                         <option value="Tracks">Tracks</option>
                         <option value="Points">Points</option>
                     </select>
                 </label>
-            </span>
+            </div>
         </div>
     );
 }

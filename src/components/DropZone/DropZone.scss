@@ -1,9 +1,11 @@
 .dropZone {
-  position: absolute;
-  bottom: 0;
-  width: 64px;
-  height: 64px;
   background-color: white;
+  cursor: copy;
+  line-height: 1em; // HACK to align everything
+
+  span {
+    font-size: small;
+  }
 
   &_active {
     background-color: lime;

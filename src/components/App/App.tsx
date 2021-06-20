@@ -1,14 +1,13 @@
 import React from 'react';
 import {RawDataView, TrackFeature, TYPE_RUN} from '../../types';
 import LoadingOverlay from '../LoadingOverlay';
-import MapControls from '../MapControls';
 import TrackOverlay from '../TrackOverlay';
 import Map from '../Map';
 import {useTicker} from '../../hooks/useTicker';
 import {readFromDB, saveToDB} from '../../utils/dbHelper';
 import {formatDuration} from '../../utils/formatTime';
 import {loadFromGpxData} from '../../utils/gpxConverter';
-import DropZone from '../DropZone';
+import ControlOverlay from '../ControlOverlay';
 
 const App = () => {
     const [allData, setAllData] = React.useState<TrackFeature[]>([]);
@@ -129,16 +128,17 @@ const App = () => {
                 rawDataView={rawDataView}
                 onSelectFeatures={onSelectFeatures}
             />
-            <DropZone onDrop={onDrop}/>
             {loading && <LoadingOverlay error={error}/>}
-            {!loading && <MapControls
+            <ControlOverlay
+                disabled={loading}
+                onDropFiles={onDrop}
                 year={year}
                 onSelectYear={setYear}
                 sampling={sampling}
                 onSelectSampling={setSampling}
                 rawDataView={rawDataView}
                 onSelectRawDataView={setRawDataView}
-            />}
+            />
             {!loading && <TrackOverlay
                 selectedFeatures={selectedFeatures}
                 activeFeature={activeFeature}
