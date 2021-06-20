@@ -1,4 +1,4 @@
 import './MapControls.scss';
-import MapControls from './MapControls';
+import {YearSelect, SamplingRateSelect, RawDataViewSelect} from './MapControls';
 
-export default MapControls;
+export {YearSelect, SamplingRateSelect, RawDataViewSelect};

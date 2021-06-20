@@ -1,14 +1,11 @@
-.mapControls {
+.controlSelect {
+  margin: 0 0.5em;
 
-  .control {
-    margin: 0 0.5em;
+  // HACK to align everything
+  display: inline-block;
+  height: 1em;
 
-    // HACK to align everything
-    display: inline-block;
-    height: 1em;
-
-    input, select {
-      margin-left: 0.5em;
-    }
+  input, select {
+    margin-left: 0.5em;
   }
 }

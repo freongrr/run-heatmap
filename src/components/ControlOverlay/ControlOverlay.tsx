@@ -1,7 +1,7 @@
 import React from 'react';
 import {RawDataView} from '../../types';
-import MapControls from '../MapControls';
 import DropZone from '../DropZone';
+import * as MapControls from '../MapControls';
 
 interface Props {
     disabled: boolean;
@@ -18,18 +18,9 @@ const ControlOverlay: React.FC<Props> = (props) => {
     return (
         <div className="controlOverlay">
             <DropZone onDrop={props.onDropFiles}/>
-            {/* TODO : MapControls does not help much now (props are exactly the same as here)
-                       Split each field to its own component and use them here.
-                       It will be easier to align them. */}
-            <MapControls
-                disabled={props.disabled}
-                year={props.year}
-                onSelectYear={props.onSelectYear}
-                sampling={props.sampling}
-                onSelectSampling={props.onSelectSampling}
-                rawDataView={props.rawDataView}
-                onSelectRawDataView={props.onSelectRawDataView}
-            />
+            <MapControls.YearSelect value={props.year} onSelect={props.onSelectYear} disabled={props.disabled}/>
+            <MapControls.SamplingRateSelect value={props.sampling} onSelect={props.onSelectSampling} disabled={props.disabled}/>
+            <MapControls.RawDataViewSelect value={props.rawDataView} onSelect={props.onSelectRawDataView} disabled={props.disabled}/>
         </div>
     );
 }
