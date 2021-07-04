@@ -1,18 +1,16 @@
 import * as turf from '@turf/turf';
 import mapboxgl, {GeoJSONSource, LngLatLike} from 'mapbox-gl';
-import {TOKEN} from './mapbox-token';
 import * as GeoJSON from 'geojson';
+import * as config from '@src/config'
 import {RawDataView, TrackFeature} from '@src/types';
 import {formatDuration} from '@src/utils/formatTime';
 
-mapboxgl.accessToken = TOKEN;
+mapboxgl.accessToken = config.MAPBOX_TOKEN;
 
 // A lot of the code is taken from:
 // https://docs.mapbox.com/mapbox-gl-js/example/heatmap-layer/
 
-const NO_OP = () => {
-    // no-op
-};
+const CENTER = config.MAP_CENTER;
 
 const SOURCE_TRACK_POINTS = 'track-points';
 const SOURCE_TRACK_LINES = 'track-lines';
@@ -30,7 +28,9 @@ const EMPTY_FEATURE_COLLECTION: GeoJSON.FeatureCollection = {
     features: []
 };
 
-const CENTER: [number, number] = [0, 0];
+const NO_OP = () => {
+    // no-op
+};
 
 class MapWrapper {
     private map: mapboxgl.Map;

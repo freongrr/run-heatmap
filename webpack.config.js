@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const NormalModuleReplacementPlugin = require('webpack').NormalModuleReplacementPlugin;
 
 module.exports = {
     entry: './src/index.tsx',
@@ -27,7 +28,8 @@ module.exports = {
         extensions: ['.tsx', '.ts', '.js'],
     },
     plugins: [
-        new HtmlWebpackPlugin({template: 'public/index.html'})
+        new HtmlWebpackPlugin({template: 'public/index.html'}),
+        new NormalModuleReplacementPlugin(/src\/config\/index\.ts/, 'index.custom.ts'),
     ],
     output: {
         filename: 'bundle.js',
