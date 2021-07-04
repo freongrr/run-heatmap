@@ -1,4 +1,4 @@
-import {TrackFeature, TrackFeatureCollection} from '../types';
+import {TrackFeature, TrackFeatureCollection} from '@src/types';
 
 export function loadFromGpxData(fileName: string, data: string): Promise<TrackFeatureCollection> {
     const parser = new DOMParser();

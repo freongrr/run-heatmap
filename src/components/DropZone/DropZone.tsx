@@ -1,7 +1,8 @@
 import React from "react";
-import {_FileSystemEntry, fsEntryToFile, readFsDirectory} from "../../utils/fileUtils";
+import {_FileSystemEntry, fsEntryToFile, readFsDirectory} from "@src/utils/fileUtils";
 
 interface Props {
+    label: string;
     onDrop: (files: File[]) => void;
 }
 
@@ -37,7 +38,7 @@ const DropZone: React.FC<Props> = (props) => {
 
     return (
         <div className={classes.join(' ')} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
-            📂 Import GPX file(s)
+            {props.label}
         </div>
     );
 };

@@ -1,11 +1,7 @@
 .dropZone {
   background-color: white;
   cursor: copy;
-  line-height: 1em; // HACK to align everything
-
-  span {
-    font-size: small;
-  }
+  line-height: 1em; // the icon is making this div huge
 
   &_active {
     background-color: lime;

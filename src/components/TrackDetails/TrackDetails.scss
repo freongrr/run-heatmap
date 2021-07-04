@@ -1,13 +1,13 @@
 .trackDetails {
 
   h2 {
-    margin: 0.5em 0;
+    margin: 0 0 0.5em 0;
     font-size: larger;
   }
 
   &-datetime {
     font-style: italic;
-    font-size: 11pt;
+    font-size: small;
   }
 
   &-timeline-wrapper {
@@ -55,10 +55,14 @@
     }
   }
 
+  &-links {
+    margin-top: 1em;
+  }
+
   &-numbers, &-links {
     display: flex;
     flex-direction: row;
-    font-size: 11pt;
+    font-size: small;
 
     &-duration, &-right {
       flex-grow: 1;

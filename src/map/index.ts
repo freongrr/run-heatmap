@@ -2,8 +2,8 @@ import * as turf from '@turf/turf';
 import mapboxgl, {GeoJSONSource, LngLatLike} from 'mapbox-gl';
 import {TOKEN} from './mapbox-token';
 import * as GeoJSON from 'geojson';
-import {RawDataView, TrackFeature} from '../types';
-import {formatDuration} from '../utils/formatTime';
+import {RawDataView, TrackFeature} from '@src/types';
+import {formatDuration} from '@src/utils/formatTime';
 
 mapboxgl.accessToken = TOKEN;
 

@@ -1,10 +1,11 @@
 import React from 'react';
-import {TrackFeature} from '../../types';
-import {formatTimestampAsDate} from '../../utils/formatTime';
+import {TrackFeature} from '@src/types';
+import {formatTimestampAsDate} from '@src/utils/formatTime';
 
 interface Props {
     selectedFeatures: TrackFeature[];
     onActiveFeature: (f: TrackFeature) => void;
+    onDismiss: () => void;
 }
 
 const TrackList: React.FC<Props> = (props) => {
@@ -37,6 +38,9 @@ const TrackList: React.FC<Props> = (props) => {
                     </div>
                 );
             })}
+            <div className="trackList-links">
+                <a href="#" onClick={props.onDismiss}>← Back</a>
+            </div>
         </div>
     );
 }

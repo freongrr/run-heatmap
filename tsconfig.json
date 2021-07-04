@@ -10,5 +10,9 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@src/*": ["./*"]
+    }
   }
 }

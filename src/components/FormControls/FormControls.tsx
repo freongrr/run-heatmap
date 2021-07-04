@@ -1,35 +1,11 @@
 import React from 'react';
-import {RawDataView} from '../../types';
+import {RawDataView} from '@src/types';
+import Select from './Select';
 
 interface Props<T> {
     value: T;
     disabled?: boolean;
     onSelect: (v: T) => void;
-}
-
-interface SelectProps {
-    label: string;
-    value: string;
-    disabled: boolean;
-    onSelect: (v: string) => void;
-    children: React.ReactNode;
-}
-
-const Select: React.FC<SelectProps> = (props) => {
-    const onSelect = React.useCallback((e: any) => {
-        props.onSelect(e.target.value);
-    }, [props.onSelect]);
-
-    return (
-        <div className="controlSelect">
-            <label>
-                {props.label}:
-                <select value={props.value} onChange={onSelect} disabled={props.disabled}>
-                    {props.children}
-                </select>
-            </label>
-        </div>
-    );
 }
 
 export const YearSelect: React.FC<Props<number | null>> = (props) => {

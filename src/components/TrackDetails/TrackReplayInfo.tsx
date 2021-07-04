@@ -1,7 +1,7 @@
 import React from 'react';
 import * as turf from '@turf/turf';
-import {TrackFeature} from '../../types';
-import {formatDuration} from '../../utils/formatTime';
+import {TrackFeature} from '@src/types';
+import {formatDuration} from '@src/utils/formatTime';
 
 interface Props {
     feature: TrackFeature;

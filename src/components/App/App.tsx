@@ -1,13 +1,12 @@
 import React from 'react';
-import {RawDataView, TrackFeature, TYPE_RUN} from '../../types';
-import LoadingOverlay from '../LoadingOverlay';
-import TrackOverlay from '../TrackOverlay';
-import Map from '../Map';
-import {useTicker} from '../../hooks/useTicker';
-import {readFromDB, saveToDB} from '../../utils/dbHelper';
-import {formatDuration} from '../../utils/formatTime';
-import {loadFromGpxData} from '../../utils/gpxConverter';
-import ControlOverlay from '../ControlOverlay';
+import {RawDataView, TrackFeature, TYPE_RUN} from '@src/types';
+import {useTicker} from '@src/hooks/useTicker';
+import {quietlySaveToDB, readFromDB} from '@src/utils/dbHelper';
+import {formatDuration} from '@src/utils/formatTime';
+import {loadFromGpxData} from '@src/utils/gpxConverter';
+import ControlOverlay from '@src/components/ControlOverlay';
+import LoadingOverlay from '@src/components/LoadingOverlay';
+import Map from '@src/components/Map';
 
 const App = () => {
     const [allData, setAllData] = React.useState<TrackFeature[]>([]);
@@ -84,6 +83,11 @@ const App = () => {
         }
     }, [allData, setSelectedFeatures]);
 
+    const onDeselectFeatures = React.useCallback(() => {
+        setSelectedFeatures([]);
+        setHighlightedFeatures([]);
+    }, [setSelectedFeatures]);
+
     const onActivateOrDeactivateFeature = React.useCallback((feature: TrackFeature | null) => {
         setActiveFeature(feature);
         if (feature) {
@@ -92,7 +96,6 @@ const App = () => {
             setHighlightedFeatures(selectedFeatures);
         }
     }, [selectedFeatures, setActiveFeature, setHighlightedFeatures]);
-
 
     const onDrop = React.useCallback(async (files: File[]) => {
         const startTime = new Date().getTime();
@@ -106,15 +109,7 @@ const App = () => {
             const endTime = new Date().getTime();
             console.log(`Imported ${newFeatures.length} features in ${formatDuration(endTime - startTime, true)}`);
             setAllData(allData.concat(newFeatures));
-
-            // We don't care if this succeeds or fails
-            saveToDB(newFeatures)
-                .then(() => {
-                    console.info(`Saved ${newFeatures.length} features to DB`);
-                })
-                .catch((e) => {
-                    console.error('Failed to save features to DB', e);
-                });
+            quietlySaveToDB(newFeatures);
         }
     }, [allData, setAllData]);
 
@@ -138,13 +133,12 @@ const App = () => {
                 onSelectSampling={setSampling}
                 rawDataView={rawDataView}
                 onSelectRawDataView={setRawDataView}
-            />
-            {!loading && <TrackOverlay
                 selectedFeatures={selectedFeatures}
+                onDeselectFeatures={onDeselectFeatures}
                 activeFeature={activeFeature}
-                ticker={ticker}
                 onActiveFeature={onActivateOrDeactivateFeature}
-            />}
+                ticker={ticker}
+            />
         </>
     );
 }

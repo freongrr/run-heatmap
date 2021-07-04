@@ -1,4 +1,4 @@
-import {TrackFeature} from '../types';
+import {TrackFeature} from '@src/types';
 
 const DB = 'db';
 const STORE_FEATURES = 'features';
@@ -43,6 +43,16 @@ export function saveToDB(features: TrackFeature[]): Promise<void> {
                 reject(e);
             });
     });
+}
+
+export function quietlySaveToDB(features: TrackFeature[]): void {
+    saveToDB(features)
+        .then(() => {
+            console.info(`Saved ${features.length} features to DB`);
+        })
+        .catch((e) => {
+            console.error('Failed to save features to DB', e);
+        });
 }
 
 function openDB(): Promise<IDBDatabase> {

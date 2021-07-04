@@ -1,6 +1,6 @@
 import React from 'react';
-import MapWrapper from '../../map';
-import {RawDataView, TrackFeature} from '../../types';
+import MapWrapper from '@src/map';
+import {RawDataView, TrackFeature} from '@src/types';
 
 interface Props {
     features: TrackFeature[];
