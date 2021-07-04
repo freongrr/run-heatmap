@@ -25,11 +25,15 @@ const TrackList: React.FC<Props> = (props) => {
         };
     };
 
+    const sortedFeatures = selectedFeatures
+        .sort((a, b) => b.properties.timestamps[0] - a.properties.timestamps[0])
+        .slice(0, Math.min(selectedFeatures.length, 10));
+
     // TODO : highlight the track on mouse over?
     return (
         <div className="trackList">
             <h2>{title}</h2>
-            {selectedFeatures.slice(0, Math.min(selectedFeatures.length, 10)).map((f) => {
+            {sortedFeatures.map((f) => {
                 return (
                     <div key={f.id}>
                         <a href="#" onClick={makeClickHandler(f)}>
