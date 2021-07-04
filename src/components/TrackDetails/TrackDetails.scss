@@ -11,6 +11,7 @@
   }
 
   &-timeline-wrapper {
+    user-select: none;
     display: flex;
     flex-direction: row;
     margin-top: 0.5em;
@@ -37,20 +38,22 @@
   }
 
   &-timeline {
-    height: 10px;
+    height: 16px;
     position: relative;
 
     &-bar {
+      position: absolute;
+      top: 6px;
+      width: 100%;
       height: 2px;
       background-color: black;
-      margin-top: 8px;
     }
 
     &-cursor {
       position: absolute;
+      top: 4px;
       width: 2px;
       height: 6px;
-      top: -2px;
       background-color: black;
     }
   }

@@ -5,7 +5,8 @@ export interface Ticker {
     readonly position: number;
     readonly play: () => void;
     readonly stop: () => void;
-    readonly pause: () => void
+    readonly pause: () => void;
+    readonly set: (position: number) => void;
 }
 
 export function useTicker(
@@ -20,18 +21,18 @@ export function useTicker(
     const play = React.useCallback(() => {
         if (max !== null) {
             if (status === 'stopped') {
-                console.log('Playing from 0');
+                console.debug('Playing from 0');
                 onStart();
                 setStatus('playing');
                 setPosition(0);
             } else if (status === 'paused') {
-                console.log('Resuming from ' + position);
+                console.debug('Resuming from ' + position);
                 setStatus('playing');
             } else {
-                console.log('Not playing because status is ' + status);
+                console.debug(`Not playing because status is ${status}`);
             }
         } else {
-            console.log('Not playing because no active feature');
+            console.debug('Not playing because no active feature');
         }
     }, [max, onStart, status, setStatus, position, setPosition]);
 
@@ -43,14 +44,23 @@ export function useTicker(
 
     const stop = React.useCallback(() => {
         if (status !== 'stopped') {
-            console.log('Stopping playback from status ' + status + ' at ' + position);
+            console.debug(`Stopping playback from status ${status} at ${position}`);
             onStop();
             setStatus('stopped');
             setPosition(null);
         } else {
-            console.log('Not stopping because status is ' + status);
+            console.debug(`Not stopping because status is ${status}`);
         }
     }, [onStop, status, setStatus, setPosition]);
+
+    const set = React.useCallback((newPosition: number) => {
+        console.debug(`Setting position to ${newPosition}`);
+        setPosition(newPosition);
+        onTick(newPosition);
+        if (status === 'stopped') {
+            setStatus('paused');
+        }
+    }, [status, setPosition, onTick]);
 
     React.useEffect(() => {
         if (max !== null && status === 'playing') {
@@ -64,7 +74,7 @@ export function useTicker(
                     }
                 }, 10);
                 return () => {
-                    //console.log('Cancelling timer');
+                    //console.debug('Cancelling timer');
                     cancelled = true;
                 };
             } else {
@@ -75,5 +85,5 @@ export function useTicker(
         }
     }, [max, onTick, status, setStatus, position, setPosition]);
 
-    return {status, position, play, pause, stop};
+    return {status, position, play, pause, stop, set};
 }

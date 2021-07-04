@@ -29,7 +29,7 @@ const TrackDetails: React.FC<Props> = (props) => {
                     <button onClick={ticker.pause} disabled={ticker.status !== 'playing'}>⏸</button>
                     <button onClick={ticker.stop} disabled={ticker.status === 'stopped'}>⏹</button>
                 </div>
-                <TrackReplayInfo feature={feature} replayPosition={ticker.position}/>
+                <TrackReplayInfo feature={feature} replayPosition={ticker.position} onSetPosition={ticker.set}/>
             </div>
 
             <div className="trackDetails-links two-columns">

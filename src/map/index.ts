@@ -36,6 +36,7 @@ class MapWrapper {
     private map: mapboxgl.Map;
     private skipCount = 8;
     private rawDataMode: RawDataView = 'Tracks';
+    private isReplaying: boolean;
 
     public onSelection: (featureIds: number[]) => void = NO_OP;
 
@@ -281,45 +282,52 @@ class MapWrapper {
     public setReplayedFeature(feature: TrackFeature | null): void {
         if (feature === null) {
             this.exitReplay();
+        } else if (!this.isReplaying) {
+            this.enterReplay(feature);
         } else {
-            if (feature.geometry.coordinates.length === 1) {
-                this.enterReplay(feature);
-            } else {
-                (this.map.getSource(SOURCE_SINGLE_TRACK) as GeoJSONSource)
-                    .setData({type: 'FeatureCollection', features: [feature]});
-                const lastPoint = feature.geometry.coordinates[feature.geometry.coordinates.length - 1];
-                this.map.panTo(lastPoint as LngLatLike);
-            }
+            this.updateReplay(feature);
         }
     }
 
-    public enterReplay(feature: TrackFeature): void {
-        const coordinates = feature.geometry.coordinates;
-
+    private enterReplay(feature: TrackFeature): void {
         this.map.setLayoutProperty(LAYER_HEATMAP, 'visibility', 'none');
         this.map.setLayoutProperty(LAYER_TRACK_POINTS, 'visibility', 'none');
         this.map.setLayoutProperty(LAYER_TRACK_LINES, 'visibility', 'none');
         this.map.setLayoutProperty(LAYER_TRACK_LINES_HIGHLIGHTED, 'visibility', 'none');
         this.map.setLayoutProperty(LAYER_CIRCLES, 'visibility', 'none');
 
+        (this.map.getSource(SOURCE_SINGLE_TRACK) as GeoJSONSource)
+            .setData({type: 'FeatureCollection', features: [feature]});
+
+        const coordinates = feature.geometry.coordinates;
+        const lastPoint = coordinates[coordinates.length - 1];
         this.map.jumpTo({
-            center: coordinates[0] as LngLatLike,
+            center: lastPoint as LngLatLike,
             zoom: 14
         });
 
-        // this.map.setPitch(30);
+        this.isReplaying = true;
     }
 
-    public exitReplay(): void {
-        // TODO : get back to initial position, or show complete track?
-        // this.map.setPitch(0);
+    private updateReplay(feature: TrackFeature): void {
+        (this.map.getSource(SOURCE_SINGLE_TRACK) as GeoJSONSource)
+            .setData({type: 'FeatureCollection', features: [feature]});
 
+        const coordinates = feature.geometry.coordinates;
+        const lastPoint = coordinates[coordinates.length - 1];
+        // TODO : when manually setting the position of the playback we should use jumpTo
+        this.map.panTo(lastPoint as LngLatLike);
+    }
+
+    private exitReplay(): void {
         (this.map.getSource(SOURCE_SINGLE_TRACK) as GeoJSONSource).setData(EMPTY_FEATURE_COLLECTION);
 
         this.map.setLayoutProperty(LAYER_HEATMAP, 'visibility', 'visible');
         this.map.setLayoutProperty(LAYER_TRACK_LINES_HIGHLIGHTED, 'visibility', 'visible');
         this.map.setLayoutProperty(LAYER_CIRCLES, 'visibility', 'visible');
         this.setRawDataRender(this.rawDataMode)
+
+        this.isReplaying = false;
     }
 }
 
