@@ -39,7 +39,7 @@ const App = () => {
         if (year !== null) {
             const startOfYear = new Date(`${year}-01-01`).getTime();
             const startOfNextYear = new Date(`${year + 1}-01-01`).getTime();
-            newVisibleData = allData.filter((f) => {
+            newVisibleData = newVisibleData.filter((f) => {
                 const timestamp = f.properties.timestamps[0];
                 return timestamp >= startOfYear && timestamp < startOfNextYear;
             });
