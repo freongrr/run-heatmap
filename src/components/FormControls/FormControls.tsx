@@ -10,7 +10,9 @@ interface Props<T> {
 
 export const YearSelect: React.FC<Props<number | null>> = (props) => {
     const years = [];
-    for (let y = 2021; y >= 2013; y--) {
+    // TODO : this should use the dates in the traces
+    const currentYear = new Date().getFullYear()
+    for (let y = currentYear; y >= 2013; y--) {
         years.push(y);
     }
     const onSelectYear = React.useCallback((v: string) => {
