@@ -1,9 +1,8 @@
-import * as turf from '@turf/turf';
-import mapboxgl, {GeoJSONSource, LngLatLike} from 'mapbox-gl';
-import * as GeoJSON from 'geojson';
 import * as config from '@src/config'
-import {RawDataView, TrackFeature} from '@src/types';
-import {formatDuration} from '@src/utils/formatTime';
+import { RawDataView, TrackFeature } from '@src/types';
+import { formatDuration } from '@src/utils/formatTime';
+import * as GeoJSON from 'geojson';
+import mapboxgl, { GeoJSONSource, LngLatLike } from 'mapbox-gl';
 
 mapboxgl.accessToken = config.MAPBOX_TOKEN;
 
@@ -68,17 +67,17 @@ class MapWrapper {
 
     private finishInitialization() {
         // Sources
-        this.map.addSource(SOURCE_TRACK_POINTS, {type: 'geojson', data: EMPTY_FEATURE_COLLECTION});
-        this.map.addSource(SOURCE_TRACK_LINES, {type: 'geojson', data: EMPTY_FEATURE_COLLECTION});
-        this.map.addSource(SOURCE_SINGLE_TRACK, {type: 'geojson', data: EMPTY_FEATURE_COLLECTION});
+        this.map.addSource(SOURCE_TRACK_POINTS, { type: 'geojson', data: EMPTY_FEATURE_COLLECTION });
+        this.map.addSource(SOURCE_TRACK_LINES, { type: 'geojson', data: EMPTY_FEATURE_COLLECTION });
+        this.map.addSource(SOURCE_SINGLE_TRACK, { type: 'geojson', data: EMPTY_FEATURE_COLLECTION });
         this.map.addSource(SOURCE_DISTANCE_CIRCLES, {
             type: 'geojson',
             data: {
                 type: 'FeatureCollection',
                 features: [
-                    //turf.circle(CENTER, 1, {steps: 36, units: 'kilometers'}),
-                    // turf.circle(CENTER, 5, {steps: 36, units: 'kilometers'}),
-                    // turf.circle(CENTER, 10, {steps: 36, units: 'kilometers'}),
+                    //circle(CENTER, 1, {steps: 36, units: 'kilometers'}),
+                    //circle(CENTER, 5, {steps: 36, units: 'kilometers'}),
+                    //circle(CENTER, 10, {steps: 36, units: 'kilometers'}),
                 ]
             }
         });
@@ -262,9 +261,9 @@ class MapWrapper {
         });
 
         (this.map.getSource(SOURCE_TRACK_POINTS) as GeoJSONSource)
-            .setData({type: 'FeatureCollection', features: pointFeatures});
+            .setData({ type: 'FeatureCollection', features: pointFeatures });
         (this.map.getSource(SOURCE_TRACK_LINES) as GeoJSONSource)
-            .setData({type: 'FeatureCollection', features: lineFeatures});
+            .setData({ type: 'FeatureCollection', features: lineFeatures });
 
         const end = new Date().getTime();
         console.log(`Refreshed ${pointFeatures.length} points and ${lineFeatures.length} lines in ${formatDuration(end - start, true)}`);
@@ -297,7 +296,7 @@ class MapWrapper {
         this.map.setLayoutProperty(LAYER_CIRCLES, 'visibility', 'none');
 
         (this.map.getSource(SOURCE_SINGLE_TRACK) as GeoJSONSource)
-            .setData({type: 'FeatureCollection', features: [feature]});
+            .setData({ type: 'FeatureCollection', features: [feature] });
 
         const coordinates = feature.geometry.coordinates;
         const lastPoint = coordinates[coordinates.length - 1];
@@ -311,7 +310,7 @@ class MapWrapper {
 
     private updateReplay(feature: TrackFeature): void {
         (this.map.getSource(SOURCE_SINGLE_TRACK) as GeoJSONSource)
-            .setData({type: 'FeatureCollection', features: [feature]});
+            .setData({ type: 'FeatureCollection', features: [feature] });
 
         const coordinates = feature.geometry.coordinates;
         const lastPoint = coordinates[coordinates.length - 1];

@@ -1,7 +1,7 @@
+import { TrackFeature } from '@src/types';
+import { formatDuration } from '@src/utils/formatTime';
+import { lineDistance } from '@turf/turf';
 import React from 'react';
-import * as turf from '@turf/turf';
-import {TrackFeature} from '@src/types';
-import {formatDuration} from '@src/utils/formatTime';
 
 interface Props {
     feature: TrackFeature;
@@ -10,15 +10,15 @@ interface Props {
 }
 
 const TrackReplayInfo: React.FC<Props> = (props) => {
-    const {feature, replayPosition} = props;
+    const { feature, replayPosition } = props;
 
-    const clone = {...feature, properties: {...feature.properties}, geometry: {...feature.geometry}};
+    const clone = { ...feature, properties: { ...feature.properties }, geometry: { ...feature.geometry } };
     if (replayPosition !== null) {
         clone.properties.timestamps = feature.properties.timestamps.slice(0, Math.max(1, replayPosition));
         clone.geometry.coordinates = feature.geometry.coordinates.slice(0, Math.max(1, replayPosition));
     }
 
-    const rawDistance = turf.lineDistance(clone, {units: 'kilometers'});
+    const rawDistance = lineDistance(clone, { units: 'kilometers' });
     const distance = Math.round(rawDistance * 100) / 100 + 'km';
 
     const startTime = new Date(clone.properties.timestamps[0]);
@@ -34,7 +34,7 @@ const TrackReplayInfo: React.FC<Props> = (props) => {
 
     const setPositionFromClick = React.useCallback((e) => {
         if (timelineRef.current) {
-            const {left, right} = timelineRef.current.getBoundingClientRect();
+            const { left, right } = timelineRef.current.getBoundingClientRect();
             const r = Math.max(0, Math.min((e.clientX - left) / (right - left), 1));
             props.onSetPosition(Math.round(feature.geometry.coordinates.length * r));
         }
@@ -57,7 +57,7 @@ const TrackReplayInfo: React.FC<Props> = (props) => {
                 onMouseMove={onBarMouseMove}
             >
                 <div className="trackDetails-timeline-bar"/>
-                <div className="trackDetails-timeline-cursor" style={{left: progressPct + '%'}}/>
+                <div className="trackDetails-timeline-cursor" style={{ left: progressPct + '%' }}/>
             </div>
             <div className="trackDetails-numbers">
                 <div className="trackDetails-numbers-distance">Distance: {distance}</div>

@@ -1,13 +1,10 @@
 const path = require('path');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const NormalModuleReplacementPlugin = require('webpack').NormalModuleReplacementPlugin;
 
 module.exports = {
     entry: './src/index.tsx',
-    devtool: 'inline-source-map',
-    devServer: {
-        contentBase: './dist',
-    },
     module: {
         rules: [{
             test: /\.tsx?$/,
@@ -27,12 +24,12 @@ module.exports = {
         },
         extensions: ['.tsx', '.ts', '.js'],
     },
-    plugins: [
+    plugins: (process.env.ANALYZE_BUNDLE ? [new BundleAnalyzerPlugin()] : []).concat([
         new HtmlWebpackPlugin({template: 'public/index.html'}),
         new NormalModuleReplacementPlugin(/src\/config\/index\.ts/, 'index.custom.ts'),
-    ],
+    ]),
     output: {
-        filename: 'bundle.js',
+        filename: '[name].[contenthash].js',
         path: path.resolve(__dirname, 'dist'),
         clean: true
     }
