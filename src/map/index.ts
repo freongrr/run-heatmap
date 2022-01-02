@@ -77,8 +77,8 @@ class MapWrapper {
                 type: 'FeatureCollection',
                 features: [
                     //turf.circle(CENTER, 1, {steps: 36, units: 'kilometers'}),
-                    turf.circle(CENTER, 5, {steps: 36, units: 'kilometers'}),
-                    turf.circle(CENTER, 10, {steps: 36, units: 'kilometers'}),
+                    // turf.circle(CENTER, 5, {steps: 36, units: 'kilometers'}),
+                    // turf.circle(CENTER, 10, {steps: 36, units: 'kilometers'}),
                 ]
             }
         });
