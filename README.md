@@ -13,3 +13,8 @@ Start the app with:
     npm run start
 
 Drag and drop GPX files (e.g. from a Strava export)
+
+Build
+-----
+
+    npm run build
