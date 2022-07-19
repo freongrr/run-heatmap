@@ -2,10 +2,9 @@ import ControlOverlay from '@src/client/components/ControlOverlay';
 import LoadingOverlay from '@src/client/components/LoadingOverlay';
 import Map from '@src/client/components/Map';
 import { useTicker } from '@src/client/hooks/useTicker';
-import { quietlySaveToDB, readFromDB } from '@src/client/utils/dbHelper';
 import { formatDuration } from '@src/client/utils/formatTime';
 import { loadFromGpxData } from '@src/client/utils/gpxConverter';
-import { RawDataView, TrackFeature, TrackFeatureCollection, TYPE_RUN } from '@src/shared/types';
+import { RawDataView, TrackFeature, TYPE_RUN } from '@src/shared/types';
 import React from 'react';
 
 const App = () => {
@@ -23,12 +22,10 @@ const App = () => {
 
     React.useEffect(() => {
         setLoading(true);
-        fetch('http://localhost:3000/foo')
-            .then((response) => {
-                response.json().then((collection: TrackFeatureCollection) => {
-                    setAllData(collection.features)
-                    setLoading(false);
-                });
+        loadFromServer()
+            .then((features) => {
+                setAllData(features)
+                setLoading(false);
             })
             .catch((e) => {
                 console.error('Loading failed', e);
@@ -101,17 +98,21 @@ const App = () => {
 
     const onDrop = React.useCallback(async (files: File[]) => {
         const startTime = new Date().getTime();
-        const newFeatures = (await Promise.all(files.map((f) => loadFromFile(f))))
-            .reduce((a, b) => a.concat(b), [])
-            .filter((f) => !allData.find((x) => x.id === f.id));
+        let newFeatureCount = 0;
+        setLoading(true);
+        try {
+            const newFeatures = (await Promise.all(files.map((f) => readGpxFile(f))))
+                .reduce((a, b) => a.concat(b), [])
+                .filter((f) => !allData.find((x) => x.id === f.id));
+            newFeatureCount = newFeatures.length;
 
-        if (newFeatures.length === 0) {
-            console.info(`No new features in import`);
-        } else {
-            const endTime = new Date().getTime();
-            console.log(`Imported ${newFeatures.length} features in ${formatDuration(endTime - startTime, true)}`);
+            const promises = newFeatures.map((f) => saveToServer(f));
+            await Promise.all(promises);
             setAllData(allData.concat(newFeatures));
-            quietlySaveToDB(newFeatures);
+        } finally {
+            const endTime = new Date().getTime();
+            console.log(`Imported ${newFeatureCount} features in ${formatDuration(endTime - startTime, true)}`);
+            setLoading(false);
         }
     }, [allData, setAllData]);
 
@@ -145,17 +146,27 @@ const App = () => {
     );
 }
 
-function loadFromDB(): Promise<TrackFeature[]> {
+async function loadFromServer(): Promise<TrackFeature[]> {
     const startTime = new Date().getTime();
-    return readFromDB()
-        .then((features) => {
-            const dbTime = new Date().getTime();
-            console.log(`Loaded ${features.length} from DB in ${formatDuration(dbTime - startTime, true)}`);
-            return features;
-        });
+    const response = await fetch('http://localhost:3000/features');
+    const features: TrackFeature[] = await response.json();
+    const endTime = new Date().getTime();
+    console.log(`Loaded ${features.length} from server in ${formatDuration(endTime - startTime, true)}`);
+    return features;
 }
 
-function loadFromFile(file: File): Promise<TrackFeature[]> {
+async function saveToServer(feature: TrackFeature): Promise<void> {
+    const response = await fetch('http://localhost:3000/features', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feature)
+    });
+    if (response.status !== 200) {
+        throw new Error('Failed');
+    }
+}
+
+function readGpxFile(file: File): Promise<TrackFeature[]> {
     if (file.name.endsWith('.gpx')) {
         return file.text().then((txt) => {
             return loadFromGpxData(file.name, txt).then((fc) => {

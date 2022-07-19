@@ -31,3 +31,6 @@ During development, the backend can stay up while the front-end part refreshes:
     npm run client:dev
 
 In this case, the front-end is accessed via http://localhost:8080/ (opens automatically)
+
+TODO : use Babel or a Typescript wrapper instead of compiling. It makes it difficult to debug,
+       and it restricts a lot what can be used (absolute import, "advanced" features)

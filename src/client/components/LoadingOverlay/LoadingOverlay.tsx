@@ -9,7 +9,7 @@ const LoadingOverlay: React.FC<Props> = (props) => {
         <div className="loadingOverlay">
             <div className="loadingOverlay-content">
                 {props.error && <div className="loadingOverlay-content-error">{props.error}</div>}
-                {!props.error && "Loading..."}
+                {!props.error && "Please wait..."}
             </div>
         </div>
     );
