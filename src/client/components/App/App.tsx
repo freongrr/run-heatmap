@@ -5,7 +5,7 @@ import { useTicker } from '@src/client/hooks/useTicker';
 import { quietlySaveToDB, readFromDB } from '@src/client/utils/dbHelper';
 import { formatDuration } from '@src/client/utils/formatTime';
 import { loadFromGpxData } from '@src/client/utils/gpxConverter';
-import { RawDataView, TrackFeature, TYPE_RUN } from '@src/shared/types';
+import { RawDataView, TrackFeature, TrackFeatureCollection, TYPE_RUN } from '@src/shared/types';
 import React from 'react';
 
 const App = () => {
@@ -23,10 +23,12 @@ const App = () => {
 
     React.useEffect(() => {
         setLoading(true);
-        loadFromDB()
-            .then((features) => {
-                setAllData(features)
-                setLoading(false);
+        fetch('http://localhost:3000/foo')
+            .then((response) => {
+                response.json().then((collection: TrackFeatureCollection) => {
+                    setAllData(collection.features)
+                    setLoading(false);
+                });
             })
             .catch((e) => {
                 console.error('Loading failed', e);
