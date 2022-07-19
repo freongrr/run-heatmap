@@ -1,4 +1,5 @@
 /.idea/
 /dist/
+/dist-server/
 /node_modules/
-/src/config/index.custom.ts
+/src/client/config/index.custom.ts

@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const NormalModuleReplacementPlugin = require('webpack').NormalModuleReplacementPlugin;
 
 module.exports = {
-    entry: './src/index.tsx',
+    entry: './src/client/index.tsx',
     module: {
         rules: [{
             test: /\.tsx?$/,
@@ -26,7 +26,7 @@ module.exports = {
     },
     plugins: (process.env.ANALYZE_BUNDLE ? [new BundleAnalyzerPlugin()] : []).concat([
         new HtmlWebpackPlugin({template: 'public/index.html'}),
-        new NormalModuleReplacementPlugin(/src\/config\/index\.ts/, 'index.custom.ts'),
+        new NormalModuleReplacementPlugin(/src\/client\/config\/index\.ts/, 'index.custom.ts'),
     ]),
     output: {
         filename: '[name].[contenthash].js',
