@@ -1,4 +1,4 @@
-import { _FileSystemEntry, fsEntryToFile, readFsDirectory } from "@src/client/utils/fileUtils";
+import { fsEntryToFile, readFsDirectory } from "@src/client/utils/fileUtils";
 import React from "react";
 
 interface Props {
@@ -57,17 +57,28 @@ function hasFiles(e: React.DragEvent<HTMLDivElement>) {
 
 // HACK : This is an experimental / deprecated API that supports folders
 async function readDataTransferItems(dataTransferItems: DataTransferItemList): Promise<File[]> {
-    const entries: _FileSystemEntry[] = [];
+    const entries: FileSystemEntry[] = [];
     for (let i = 0; i < dataTransferItems.length; i++) {
-        const entry: _FileSystemEntry = dataTransferItems[i].webkitGetAsEntry();
+        const entry = dataTransferItems[i].webkitGetAsEntry();
         if (entry.isDirectory) {
-            entries.push(...(await readFsDirectory(entry)));
+            const directoryEntry = entry as any as FileSystemDirectoryEntry;
+            entries.push(...(await readFsDirectory(directoryEntry)));
         } else if (entry.isFile) {
             entries.push(entry);
         }
     }
 
-    return Promise.all(entries.map((e) => fsEntryToFile(e)));
+    const files: File[] = [];
+    await Promise.all(entries.map(async (e) => {
+        if (e) {
+            const f = await fsEntryToFile(e as FileSystemFileEntry);
+            files.push(f);
+        } else {
+            return Promise.resolve();
+        }
+    }));
+
+    return files;
 }
 
 export default DropZone;
