@@ -6,10 +6,11 @@
   "scripts": {
     "client:dev": "webpack serve --open --config webpack.dev.js",
     "client:build": "rm -rf ./dist && webpack --config webpack.prod.js",
-    "client:analyze": "ANALYZE_BUNDLE=1 npm run build",
+    "client:analyze": "ANALYZE_BUNDLE=1 npm run client:build",
     "server:build": "rm -rf ./dist-server && tsc --build tsconfig.server.json",
     "server:start": "node dist-server/server/index.js",
-    "all": "npm run client:build && npm run server:build && npm run server:start"
+    "pack-www": "rm -rf www && mkdir www && cp package.json package-lock.json README.md www && cp dist/* www && cp -r dist-server www",
+    "start-www": "STATIC_ROOT=. node dist-server/server/index.js"
   },
   "keywords": [],
   "author": "Fabien Cortina <fabien.cortina@gmail.com>",

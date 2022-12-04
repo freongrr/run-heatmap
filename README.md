@@ -6,7 +6,7 @@ My personalized heat-map.
 Usage
 -----
 
-Copy `src/client/config/index.ts` to `src/client/config/index.custom.ts` and enter a mapbox token. 
+Copy `src/client/config/index.ts` to `src/client/config/index.custom.ts` and enter a mapbox token.
 
 Start the app with:
 
@@ -34,3 +34,16 @@ In this case, the front-end is accessed via http://localhost:8080/ (opens automa
 
 TODO : use Babel or a Typescript wrapper instead of compiling. It makes it difficult to debug,
        and it restricts a lot what can be used (absolute import, "advanced" features)
+
+Semi-static deployment
+----------------------
+
+There is a mode where static files can be served by a HTTP server and the API by the NodeJS app:
+
+    npm run client:build
+    npm run server:build
+    npm run pack-www
+
+    # Copy the content of www somewhere
+    npm install
+    npm run start-www

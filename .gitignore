@@ -2,4 +2,6 @@
 /dist/
 /dist-server/
 /node_modules/
+/run-features/
 /src/client/config/index.custom.ts
+/www/

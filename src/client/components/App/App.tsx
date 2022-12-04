@@ -148,7 +148,7 @@ const App = () => {
 
 async function loadFromServer(): Promise<TrackFeature[]> {
     const startTime = new Date().getTime();
-    const response = await fetch('http://localhost:3000/features');
+    const response = await fetch(`http://${location.hostname}:3000/features`);
     const features: TrackFeature[] = await response.json();
     const endTime = new Date().getTime();
     console.log(`Loaded ${features.length} from server in ${formatDuration(endTime - startTime, true)}`);
@@ -156,7 +156,7 @@ async function loadFromServer(): Promise<TrackFeature[]> {
 }
 
 async function saveToServer(feature: TrackFeature): Promise<void> {
-    const response = await fetch('http://localhost:3000/features', {
+    const response = await fetch(`http://${location.hostname}:3000/features`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(feature)

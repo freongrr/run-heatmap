@@ -4,9 +4,9 @@ import * as express from 'express';
 import { loadFeatures, putFeature } from './db';
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:8080' }));
+app.use(express.static(process.env.STATIC_ROOT || './dist'));
+app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: 1_000_000 }));
-app.use(express.static('./dist'));
 app.use(compression());
 
 app.get('/features', async (req, res) => {
