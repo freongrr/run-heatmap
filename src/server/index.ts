@@ -10,8 +10,19 @@ app.use(express.json({ limit: 1_000_000 }));
 app.use(compression());
 
 app.get('/features', async (req, res) => {
+    const samplingStr = req.query['sampling'] as string | undefined;
+    const sampling: number = samplingStr ? parseInt(samplingStr) : 1;
     const features = await loadFeatures();
-    res.status(200).json(features);
+    const sampledFeatures = features.map((f) => {
+        return {
+            ...f, geometry: {
+                ...f.geometry, coordinates: f.geometry.coordinates.filter((c, i) => {
+                    return i % sampling === 0;
+                })
+            }
+        };
+    });
+    res.status(200).json(sampledFeatures);
 });
 
 app.post('/features', async (req, res) => {

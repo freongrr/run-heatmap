@@ -22,7 +22,7 @@ const App = () => {
 
     React.useEffect(() => {
         setLoading(true);
-        loadFromServer()
+        loadFromServer(sampling)
             .then((features) => {
                 setAllData(features)
                 setLoading(false);
@@ -31,7 +31,7 @@ const App = () => {
                 console.error('Loading failed', e);
                 setError(e.toString());
             });
-    }, [setLoading, setAllData, setError]);
+    }, [setLoading, setAllData, setError, sampling]);
 
     React.useEffect(() => {
         let newVisibleData = allData.filter((f) => f.properties.type === TYPE_RUN);
@@ -146,9 +146,9 @@ const App = () => {
     );
 }
 
-async function loadFromServer(): Promise<TrackFeature[]> {
+async function loadFromServer(sampling: number): Promise<TrackFeature[]> {
     const startTime = new Date().getTime();
-    const response = await fetch(`http://${location.hostname}:3000/features`);
+    const response = await fetch(`http://${location.hostname}:3000/features?sampling=${sampling}`);
     const features: TrackFeature[] = await response.json();
     const endTime = new Date().getTime();
     console.log(`Loaded ${features.length} from server in ${formatDuration(endTime - startTime, true)}`);

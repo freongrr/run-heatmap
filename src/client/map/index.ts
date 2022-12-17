@@ -231,22 +231,11 @@ class MapWrapper {
         const pointFeatures: GeoJSON.Feature<GeoJSON.Point>[] = [];
 
         features.forEach((f) => {
-            const lineFeature = {
-                ...f,
-                geometry: {
-                    ...f.geometry,
-                    coordinates: [] as GeoJSON.Position[]
-                }
-            };
+            lineFeatures.push(f);
 
-            // Sample points
             f.geometry.coordinates
-                .filter((c, i) => {
-                    return i % this.skipCount === 0;
-                })
                 .forEach((c) => {
                     const [lon, lat] = c;
-                    lineFeature.geometry.coordinates.push([lon, lat]);
                     pointFeatures.push({
                         type: 'Feature',
                         properties: {},
@@ -257,7 +246,6 @@ class MapWrapper {
                     });
                 });
 
-            lineFeatures.push(lineFeature);
         });
 
         (this.map.getSource(SOURCE_TRACK_POINTS) as GeoJSONSource)
