@@ -21,16 +21,31 @@ const App = () => {
     const [replayedFeature, setReplayedFeature] = React.useState<TrackFeature | null>(null);
 
     React.useEffect(() => {
+        let allFeatures: TrackFeature[] = [];
         setLoading(true);
-        loadFromServer(sampling)
-            .then((features) => {
-                setAllData(features)
-                setLoading(false);
-            })
-            .catch((e) => {
-                console.error('Loading failed', e);
-                setError(e.toString());
-            });
+        setAllData(allFeatures);
+
+        function fetchFeatures(year: number): void {
+            loadFromServer(year, sampling)
+                .then((features) => {
+                    if (features.length === 0) {
+                        console.info(`No more data - stopping`);
+                        setLoading(false);
+                    } else {
+                        console.info(`Fetched ${features.length} for year ${year}`);
+                        allFeatures = allFeatures.concat(features);
+                        setAllData(allFeatures);
+                        fetchFeatures(year - 1);
+                    }
+                })
+                .catch((e) => {
+                    console.error('Loading failed', e);
+                    setError(e.toString());
+                });
+        }
+
+        const currentYear = new Date().getFullYear();
+        fetchFeatures(currentYear);
     }, [setLoading, setAllData, setError, sampling]);
 
     React.useEffect(() => {
@@ -108,7 +123,17 @@ const App = () => {
 
             const promises = newFeatures.map((f) => saveToServer(f));
             await Promise.all(promises);
-            setAllData(allData.concat(newFeatures));
+
+            // HACK - sample the features
+            const sampledFeatures = newFeatures.map((f) => {
+                return {
+                    ...f, geometry: {
+                        ...f.geometry,
+                        coordinates: f.geometry.coordinates.filter((c, i) => i % sampling === 0)
+                    }
+                }
+            });
+            setAllData(allData.concat(sampledFeatures));
         } finally {
             const endTime = new Date().getTime();
             console.log(`Imported ${newFeatureCount} features in ${formatDuration(endTime - startTime, true)}`);
@@ -146,9 +171,9 @@ const App = () => {
     );
 }
 
-async function loadFromServer(sampling: number): Promise<TrackFeature[]> {
+async function loadFromServer(year: number, sampling: number): Promise<TrackFeature[]> {
     const startTime = new Date().getTime();
-    const response = await fetch(`http://${location.hostname}:3000/features?sampling=${sampling}`);
+    const response = await fetch(`http://${location.hostname}:3000/features?year=${year}&sampling=${sampling}`);
     const features: TrackFeature[] = await response.json();
     const endTime = new Date().getTime();
     console.log(`Loaded ${features.length} from server in ${formatDuration(endTime - startTime, true)}`);
