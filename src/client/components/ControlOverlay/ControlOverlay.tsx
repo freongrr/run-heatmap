@@ -3,7 +3,7 @@ import * as FormControls from "@src/client/components/FormControls";
 import TrackDetails from '@src/client/components/TrackDetails';
 import TrackList from '@src/client/components/TrackList';
 import { Ticker } from '@src/client/hooks/useTicker';
-import { RawDataView, TrackFeature } from '@src/shared/types';
+import { RawDataView, Track } from '@src/shared/types';
 import React from 'react';
 
 interface Props {
@@ -15,10 +15,10 @@ interface Props {
     rawDataView: RawDataView;
     onSelectRawDataView: (v: RawDataView) => void;
     onDropFiles: (files: File[]) => void;
-    selectedFeatures: TrackFeature[];
-    onDeselectFeatures: () => void;
-    activeFeature: TrackFeature | null;
-    onActiveFeature: (f: TrackFeature | null) => void;
+    selectedTracks: Track[];
+    onDeselectTracks: () => void;
+    activeTrack: Track | null;
+    onActiveTrack: (f: Track | null) => void;
     ticker: Ticker;
 }
 
@@ -26,24 +26,24 @@ const ControlOverlay: React.FC<Props> = (props) => {
     const [visible, setVisible] = React.useState<boolean>(true);
     const onHideOverlay = React.useCallback(() => setVisible(false), [setVisible]);
     const onShowOverlay = React.useCallback(() => setVisible(true), [setVisible]);
-    const onHideActiveTrack = React.useCallback(() => props.onActiveFeature(null), [props.onActiveFeature]);
+    const onHideActiveTrack = React.useCallback(() => props.onActiveTrack(null), [props.onActiveTrack]);
     if (!visible) {
         return <div className="controlOverlay-icon" onClick={onShowOverlay}/>;
     } else {
         let content: React.ReactNode;
-        if (props.activeFeature) {
+        if (props.activeTrack) {
             content = (
                 <TrackDetails
-                    feature={props.activeFeature}
+                    track={props.activeTrack}
                     ticker={props.ticker}
                     onDismiss={onHideActiveTrack}/>
             );
-        } else if (props.selectedFeatures.length > 0) {
+        } else if (props.selectedTracks.length > 0) {
             content = (
                 <TrackList
-                    selectedFeatures={props.selectedFeatures}
-                    onActiveFeature={props.onActiveFeature}
-                    onDismiss={props.onDeselectFeatures}
+                    selectedTracks={props.selectedTracks}
+                    onActiveTrack={props.onActiveTrack}
+                    onDismiss={props.onDeselectTracks}
                 />
             );
         } else {

@@ -11,7 +11,8 @@
     "server:start": "node dist-server/server/index.js",
     "server:debug": "node inspect dist-server/server/index.js",
     "pack-www": "rm -rf www && mkdir www && cp package.json package-lock.json README.md www && cp dist/* www && cp -r dist-server www",
-    "start-www": "STATIC_ROOT=. node dist-server/server/index.js"
+    "start-www": "STATIC_ROOT=. node dist-server/server/index.js",
+    "db:upgrade": "node dist-server/server/db.js --upgrade"
   },
   "keywords": [],
   "author": "Fabien Cortina <fabien.cortina@gmail.com>",
@@ -43,7 +44,8 @@
     "cors": "2.8.5",
     "express": "4.18.1",
     "mapbox-gl": "2.9.2",
-    "pouchdb": "7.3.0",
+    "pouchdb": "8.0.0",
+    "pouchdb-find": "8.0.0",
     "react": "17.0.2",
     "react-dom": "17.0.2"
   }

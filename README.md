@@ -44,6 +44,13 @@ There is a mode where static files can be served by a HTTP server and the API by
     npm run server:build
     npm run pack-www
 
-    # Copy the content of www somewhere
+Then copy the content of `www` somewhere
+
+Finish setup and start up the app:
+
     npm install
+
+    # Upgrade DB if needed
+    npm run db:upgrade
+
     npm run start-www

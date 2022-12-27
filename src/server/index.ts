@@ -1,7 +1,7 @@
 import * as compression from 'compression';
 import * as cors from 'cors';
 import * as express from 'express';
-import { loadFeatures, putFeature } from './db';
+import { loadTracks, putTrack } from './db';
 
 const app = express();
 app.use(express.static(process.env.STATIC_ROOT || './dist'));
@@ -9,31 +9,28 @@ app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: 1_000_000 }));
 app.use(compression());
 
-app.get('/features', async (req, res) => {
+app.get('/tracks', async (req, res) => {
     const year = parseInt(req.query['year'] as string);
     const sampling = parseInt(req.query['sampling'] as string);
     if (isNaN(year) || isNaN(sampling)) {
-        res.status(400);
+        res.status(400).send('Bad request');
     } else {
-        const features = await loadFeatures(year);
-        const sampledFeatures = features.map((f) => {
+        const tracks = await loadTracks(year);
+        const sampledTracks = tracks.map((t) => {
             return {
-                ...f, geometry: {
-                    ...f.geometry,
-                    coordinates: f.geometry.coordinates.filter((c, i) => {
-                        return i % sampling === 0;
-                    })
-                }
+                ...t,
+                coordinates: t.coordinates.filter((c, i) => i % sampling === 0),
+                coordinateTimes: t.coordinateTimes.filter((t, i) => i % sampling === 0)
             };
         });
-        res.status(200).json(sampledFeatures);
+        res.status(200).json(sampledTracks);
     }
 });
 
-app.post('/features', async (req, res) => {
+app.post('/tracks', async (req, res) => {
     // TODO : validation
-    const feature = req.body;
-    await putFeature(feature);
+    const track = req.body;
+    await putTrack(track);
     res.status(200).end()
 });
 

@@ -13,7 +13,8 @@ export function useTicker(
     max: number | null,
     onStart: () => void,
     onTick: (i: number) => void,
-    onStop: () => void
+    onStop: () => void,
+    rate = 1
 ): Ticker {
     const [status, setStatus] = React.useState<'stopped' | 'playing' | 'paused'>('stopped');
     const [position, setPosition] = React.useState<number | null>(null);
@@ -32,7 +33,7 @@ export function useTicker(
                 console.debug(`Not playing because status is ${status}`);
             }
         } else {
-            console.debug('Not playing because no active feature');
+            console.debug('Not playing because nothing active¥');
         }
     }, [max, onStart, status, setStatus, position, setPosition]);
 
@@ -72,7 +73,7 @@ export function useTicker(
                     if (!cancelled) {
                         setPosition(position + 1);
                     }
-                }, 10);
+                }, 10 * rate);
                 return () => {
                     //console.debug('Cancelling timer');
                     cancelled = true;
@@ -83,7 +84,7 @@ export function useTicker(
         } else if (status !== 'stopped' && max === null) {
             stop();
         }
-    }, [max, onTick, status, setStatus, position, setPosition]);
+    }, [max, rate, onTick, status, setStatus, position, setPosition]);
 
     return {status, position, play, pause, stop, set};
 }

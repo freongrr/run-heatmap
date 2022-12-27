@@ -4,6 +4,8 @@ import { RawDataView, TrackFeature } from '@src/shared/types';
 import * as GeoJSON from 'geojson';
 import mapboxgl, { GeoJSONSource, LngLatLike } from 'mapbox-gl';
 
+// TODO : stop using TrackFeature and use a generic LineFeature instead
+
 mapboxgl.accessToken = config.MAPBOX_TOKEN;
 
 // A lot of the code is taken from:

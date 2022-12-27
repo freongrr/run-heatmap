@@ -1,14 +1,15 @@
 import MapWrapper from '@src/client/map';
-import { RawDataView, TrackFeature } from '@src/shared/types';
+import { convertTrackToFeature } from '@src/shared/convert';
+import { RawDataView, Track, TrackFeature } from '@src/shared/types';
 import React from 'react';
 
 interface Props {
-    features: TrackFeature[];
-    highlightedFeatures: TrackFeature[];
-    replayedFeature: TrackFeature | null;
+    tracks: Track[];
+    highlightedTracks: Track[];
+    replayedTrack: Track | null;
     sampling: number;
     rawDataView: RawDataView;
-    onSelectFeatures: (ids: number[]) => void;
+    onSelectTracks: (ids: number[]) => void;
 }
 
 const Map: React.FC<Props> = (props) => {
@@ -22,25 +23,25 @@ const Map: React.FC<Props> = (props) => {
 
     React.useEffect(() => {
         if (mapWrapper) {
-            mapWrapper.onSelection = (featureIds) => {
-                props.onSelectFeatures(featureIds);
+            mapWrapper.onSelection = (ids) => {
+                props.onSelectTracks(ids);
             };
         }
-    }, [mapWrapper, props.onSelectFeatures]);
+    }, [mapWrapper, props.onSelectTracks]);
 
     React.useEffect(() => {
         if (mapWrapper) {
-            mapWrapper.setData(props.features);
+            mapWrapper.setData(convertTracks(props.tracks));
         }
-    }, [mapWrapper, props.features]);
+    }, [mapWrapper, props.tracks]);
 
     React.useEffect(() => {
         if (mapWrapper) {
             mapWrapper.setDataSampling(props.sampling);
             // TODO : this causes setData to be called twice on the first render
-            mapWrapper.setData(props.features);
+            mapWrapper.setData(convertTracks(props.tracks));
         }
-    }, [mapWrapper, props.sampling /*, props.features TODO : Do I need props.features? */]);
+    }, [mapWrapper, props.sampling /*, props.runs TODO : Do I need props.runs? */]);
 
     React.useEffect(() => {
         if (mapWrapper) {
@@ -50,19 +51,27 @@ const Map: React.FC<Props> = (props) => {
 
     React.useEffect(() => {
         if (mapWrapper) {
-            mapWrapper.setHighlightedFeatures(props.highlightedFeatures);
+            mapWrapper.setHighlightedFeatures(convertTracks(props.highlightedTracks));
         }
-    }, [mapWrapper, props.highlightedFeatures]);
+    }, [mapWrapper, props.highlightedTracks]);
 
     React.useEffect(() => {
         if (mapWrapper) {
-            mapWrapper.setReplayedFeature(props.replayedFeature);
+            if (props.replayedTrack) {
+                mapWrapper.setReplayedFeature(convertTrackToFeature(props.replayedTrack));
+            } else {
+                mapWrapper.setReplayedFeature(null);
+            }
         }
-    }, [mapWrapper, props.replayedFeature]);
+    }, [mapWrapper, props.replayedTrack]);
 
     return (
         <div id="map"/>
     );
+}
+
+function convertTracks(tracks: Track[]): TrackFeature[] {
+    return tracks.map((t) => convertTrackToFeature(t));
 }
 
 export default Map;

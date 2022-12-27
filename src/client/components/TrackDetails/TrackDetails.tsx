@@ -1,17 +1,17 @@
 import { Ticker } from '@src/client/hooks/useTicker';
 import { formatTimestampAsDatetime } from '@src/client/utils/formatTime';
-import { TrackFeature } from '@src/shared/types';
+import { Track } from '@src/shared/types';
 import React from 'react';
 import TrackReplayInfo from './TrackReplayInfo';
 
 interface Props {
-    feature: TrackFeature;
+    track: Track;
     ticker: Ticker;
     onDismiss: () => void;
 }
 
 const TrackDetails: React.FC<Props> = (props) => {
-    const {feature, ticker} = props;
+    const {track, ticker} = props;
 
     const onClickDismiss = React.useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
@@ -20,16 +20,16 @@ const TrackDetails: React.FC<Props> = (props) => {
 
     return (
         <div className="trackDetails">
-            <h2>{feature.properties.description}</h2>
-            <div className="trackDetails-datetime">{formatTimestampAsDatetime(feature.properties.timestamps[0])}</div>
+            <h2>{track.description}</h2>
+            <div className="trackDetails-datetime">{formatTimestampAsDatetime(track.timestamp + track.coordinateTimes[0])}</div>
 
             <div className="trackDetails-timeline-wrapper">
                 <div>
                     <button onClick={ticker.play} disabled={ticker.status === 'playing'}>▶️</button>
-                    <button onClick={ticker.pause} disabled={ticker.status !== 'playing'}>⏸</button>
-                    <button onClick={ticker.stop} disabled={ticker.status === 'stopped'}>⏹</button>
+                    <button onClick={ticker.pause} disabled={ticker.status !== 'playing'}>⏸️</button>
+                    <button onClick={ticker.stop} disabled={ticker.status === 'stopped'}>⏹️</button>
                 </div>
-                <TrackReplayInfo feature={feature} replayPosition={ticker.position} onSetPosition={ticker.set}/>
+                <TrackReplayInfo track={track} replayPosition={ticker.position} onSetPosition={ticker.set}/>
             </div>
 
             <div className="trackDetails-links two-columns">
@@ -37,7 +37,7 @@ const TrackDetails: React.FC<Props> = (props) => {
                     <a href="#" onClick={onClickDismiss}>← Back</a>
                 </div>
                 <div className="trackDetails-links-right">
-                    <a href={'https://www.strava.com/activities/' + feature.id} target="_blank">
+                    <a href={'https://www.strava.com/activities/' + track.id} target="_blank">
                         Open in Strava ↑
                     </a>
                 </div>

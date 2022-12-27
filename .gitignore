@@ -2,6 +2,7 @@
 /dist/
 /dist-server/
 /node_modules/
-/run-features/
+/run-features*/
+/track_db*/
 /src/client/config/index.custom.ts
 /www/
