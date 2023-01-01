@@ -9,6 +9,7 @@ export interface Track {
     description: string;
     timestamp: number;
     coordinates: Coordinates[];
+    // TODO : could save some space by using seconds instead of millis
     coordinateTimes: number[];
 }
 

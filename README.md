@@ -46,11 +46,15 @@ There is a mode where static files can be served by a HTTP server and the API by
 
 Then copy the content of `www` somewhere
 
-Finish setup and start up the app:
+Finish setup:
 
     npm install
 
     # Upgrade DB if needed
     npm run db:upgrade
 
+Start, using HTTP and/or HTTPS:
+
     npm run start-www
+
+    SSL_KEY_PATH=xxx SSL_CERT_PATH=yyy npm run start-www

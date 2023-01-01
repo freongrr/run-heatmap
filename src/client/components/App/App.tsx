@@ -7,6 +7,10 @@ import { loadFromGpxData } from '@src/client/utils/gpxConverter';
 import { RawDataView, Track } from '@src/shared/types';
 import React from 'react';
 
+const API_URL = location.protocol === 'https:'
+    ? `https://${location.hostname}:3001`
+    : `http://${location.hostname}:3000`;
+
 const App = () => {
     const [allData, setAllData] = React.useState<Track[]>([]);
     const [visibleData, setVisibleData] = React.useState<Track[]>([]);
@@ -21,6 +25,8 @@ const App = () => {
     const [replayedTrack, setReplayedTrack] = React.useState<Track | null>(null);
 
     React.useEffect(() => {
+        const currentYear = new Date().getFullYear();
+
         let loadedTracks: Track[] = [];
         setLoading(true);
         setAllData(loadedTracks);
@@ -28,7 +34,7 @@ const App = () => {
         function fetchTracks(year: number): void {
             loadFromServer(year, sampling)
                 .then((tracks) => {
-                    if (tracks.length === 0) {
+                    if (tracks.length === 0 && year !== currentYear) {
                         setLoading(false);
                     } else {
                         loadedTracks = loadedTracks.concat(tracks);
@@ -42,7 +48,6 @@ const App = () => {
                 });
         }
 
-        const currentYear = new Date().getFullYear();
         fetchTracks(currentYear);
     }, [setLoading, setAllData, setError, sampling]);
 
@@ -167,7 +172,7 @@ const App = () => {
 
 async function loadFromServer(year: number, sampling: number): Promise<Track[]> {
     const startTime = new Date().getTime();
-    const response = await fetch(`http://${location.hostname}:3000/tracks?year=${year}&sampling=${sampling}`);
+    const response = await fetch(`${API_URL}/tracks?year=${year}&sampling=${sampling}`);
     const tracks: Track[] = await response.json();
     const endTime = new Date().getTime();
     console.log(`Loaded ${tracks.length} tracks for ${year} in ${formatDuration(endTime - startTime, true)}`);
@@ -175,7 +180,7 @@ async function loadFromServer(year: number, sampling: number): Promise<Track[]> 
 }
 
 async function saveToServer(track: Track): Promise<void> {
-    const response = await fetch(`http://${location.hostname}:3000/tracks`, {
+    const response = await fetch(`${API_URL}/tracks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(track)
