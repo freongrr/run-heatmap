@@ -37,7 +37,7 @@ const TrackList: React.FC<Props> = (props) => {
                 return (
                     <div key={t.id}>
                         <a href="#" onClick={makeClickHandler(t)}>
-                            {t.description} ({formatTimestampAsDate(t.timestamp + t.coordinateTimes[0])})
+                            {t.description} ({formatTimestampAsDate(t.timestamp)})
                         </a>
                     </div>
                 );

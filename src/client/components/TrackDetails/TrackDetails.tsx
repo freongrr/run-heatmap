@@ -11,7 +11,7 @@ interface Props {
 }
 
 const TrackDetails: React.FC<Props> = (props) => {
-    const {track, ticker} = props;
+    const { track, ticker } = props;
 
     const onClickDismiss = React.useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
@@ -21,7 +21,9 @@ const TrackDetails: React.FC<Props> = (props) => {
     return (
         <div className="trackDetails">
             <h2>{track.description}</h2>
-            <div className="trackDetails-datetime">{formatTimestampAsDatetime(track.timestamp + track.coordinateTimes[0])}</div>
+            <div className="trackDetails-datetime">
+                {formatTimestampAsDatetime(track.timestamp, track.coordinateSeconds[0])}
+            </div>
 
             <div className="trackDetails-timeline-wrapper">
                 <div>

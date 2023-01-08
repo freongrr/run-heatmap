@@ -4,7 +4,7 @@ import * as express from 'express';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
-import { loadTracks, putTrack } from './db';
+import * as routes from './routes';
 
 const PORT = 3000;
 const SSL_PORT = 3001;
@@ -16,28 +16,21 @@ app.use(express.json({ limit: 1_000_000 }));
 app.use(compression());
 
 app.get('/tracks', async (req, res) => {
-    const year = parseInt(req.query['year'] as string);
-    const sampling = parseInt(req.query['sampling'] as string);
-    if (isNaN(year) || isNaN(sampling)) {
-        res.status(400).send('Bad request');
-    } else {
-        const tracks = await loadTracks(year);
-        const sampledTracks = tracks.map((t) => {
-            return {
-                ...t,
-                coordinates: t.coordinates.filter((c, i) => i % sampling === 0),
-                coordinateTimes: t.coordinateTimes.filter((t, i) => i % sampling === 0)
-            };
-        });
-        res.status(200).json(sampledTracks);
+    const start = new Date().getTime();
+    try {
+        await routes.getTracks(req, res);
+    } finally {
+        console.info(`[GET /tracks] Handled request in ${new Date().getTime() - start} ms`);
     }
 });
 
 app.post('/tracks', async (req, res) => {
-    // TODO : validation
-    const track = req.body;
-    await putTrack(track);
-    res.status(200).end()
+    const start = new Date().getTime();
+    try {
+        await routes.postTrack(req, res);
+    } finally {
+        console.info(`[POST /tracks] Handled request in ${new Date().getTime() - start} ms`);
+    }
 });
 
 const promises: Array<Promise<string>> = []

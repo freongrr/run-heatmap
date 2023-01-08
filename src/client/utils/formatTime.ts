@@ -3,8 +3,8 @@ export function formatTimestampAsDate(timestamp: number): string {
     return `${d.getFullYear()}-${padWith0(d.getMonth() + 1)}-${padWith0(d.getDate())}`;
 }
 
-export function formatTimestampAsDatetime(timestamp: number): string {
-    const d = new Date(timestamp);
+export function formatTimestampAsDatetime(timestamp: number, seconds: number): string {
+    const d = new Date(timestamp + seconds * 1000);
     const date = `${d.getFullYear()}-${padWith0(d.getMonth() + 1)}-${padWith0(d.getDate())}`;
     const time = `${padWith0(d.getHours())}:${padWith0(d.getMinutes())}:${padWith0(d.getSeconds())}`;
     return date + ' ' + time;

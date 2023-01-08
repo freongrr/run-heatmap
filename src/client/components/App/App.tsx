@@ -4,6 +4,7 @@ import Map from '@src/client/components/Map';
 import { useTicker } from '@src/client/hooks/useTicker';
 import { formatDuration } from '@src/client/utils/formatTime';
 import { loadFromGpxData } from '@src/client/utils/gpxConverter';
+import { sampleTrack } from '@src/shared/convert';
 import { RawDataView, Track } from '@src/shared/types';
 import React from 'react';
 
@@ -70,14 +71,14 @@ const App = () => {
             setReplayedTrack({
                 ...activeTrack,
                 coordinates: [activeTrack.coordinates[0]],
-                coordinateTimes: [activeTrack.coordinateTimes[0]]
+                coordinateSeconds: [activeTrack.coordinateSeconds[0]]
             });
         }, [activeTrack, setReplayedTrack]),
         React.useCallback((i: number) => {
             setReplayedTrack({
                 ...activeTrack,
                 coordinates: activeTrack.coordinates.slice(0, i),
-                coordinateTimes: activeTrack.coordinateTimes.slice(0, i)
+                coordinateSeconds: activeTrack.coordinateSeconds.slice(0, i)
             });
         }, [activeTrack, setReplayedTrack]),
         React.useCallback(() => {
@@ -122,16 +123,8 @@ const App = () => {
             newTrackCount = newTracks.length;
 
             const promises = newTracks.map((f) => saveToServer(f));
-            await Promise.all(promises);
-
-            // TODO : this should be done on the server for consistency
-            const sampledTrack: Track[] = newTracks.map((f) => {
-                return {
-                    ...f,
-                    coordinates: f.coordinates.filter((c, i) => i % sampling === 0),
-                    coordinateTimes: f.coordinateTimes.filter((t, i) => i % sampling === 0)
-                }
-            });
+            const sampledTrack: Track[] = (await Promise.all(promises))
+                .map((t) => sampleTrack(t, sampling));
             setAllData(allData.concat(sampledTrack));
         } finally {
             const endTime = new Date().getTime();
@@ -179,7 +172,7 @@ async function loadFromServer(year: number, sampling: number): Promise<Track[]> 
     return tracks;
 }
 
-async function saveToServer(track: Track): Promise<void> {
+async function saveToServer(track: Track): Promise<Track> {
     const response = await fetch(`${API_URL}/tracks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -188,6 +181,7 @@ async function saveToServer(track: Track): Promise<void> {
     if (response.status !== 200) {
         throw new Error('Failed');
     }
+    return await response.json();
 }
 
 function readGpxFile(file: File): Promise<Track[]> {

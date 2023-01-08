@@ -16,7 +16,7 @@ const TrackReplayInfo: React.FC<Props> = (props) => {
     const clone: Track = { ...track };
     if (replayPosition !== null) {
         clone.coordinates = track.coordinates.slice(0, Math.max(1, replayPosition));
-        clone.coordinateTimes = track.coordinateTimes.slice(0, Math.max(1, replayPosition));
+        clone.coordinateSeconds = track.coordinateSeconds.slice(0, Math.max(1, replayPosition));
     }
 
     const formattedDistance = Math.round(getDistanceInKms(clone) * 100) / 100 + 'km';
@@ -69,9 +69,9 @@ function getDistanceInKms(track: Track): number {
 }
 
 function getDurationInMillis(track: Track): number {
-    const startTime = new Date(track.timestamp + track.coordinateTimes[0]);
-    const endTime = new Date(track.timestamp + track.coordinateTimes[track.coordinateTimes.length - 1]);
-    return endTime.getTime() - startTime.getTime();
+    const start = new Date(track.timestamp + track.coordinateSeconds[0] * 1000);
+    const end = new Date(track.timestamp + track.coordinateSeconds[track.coordinateSeconds.length - 1] * 1000);
+    return end.getTime() - start.getTime();
 }
 
 export default TrackReplayInfo;

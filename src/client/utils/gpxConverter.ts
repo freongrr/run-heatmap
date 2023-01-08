@@ -23,6 +23,8 @@ export function loadFromGpxData(fileName: string, data: string): Promise<Track[]
         const track: Track = {
             id: +fileName.replace('.gpx', ''),
             description: description,
+            sampling: 1,
+            year: new Date(timestamps[0]).getFullYear(),
             timestamp: timestamps[0],
             coordinates: Array.from(pointElements).map((e) => {
                 return [
@@ -30,7 +32,7 @@ export function loadFromGpxData(fileName: string, data: string): Promise<Track[]
                     +e.getAttribute('lat')
                 ];
             }),
-            coordinateTimes: timestamps.map((t) => t - timestamps[0])
+            coordinateSeconds: timestamps.map((t) => (t - timestamps[0]) / 1000)
         };
         return Promise.resolve([track]);
     } else {

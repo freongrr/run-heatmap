@@ -7,26 +7,11 @@ export type Coordinates = [number, number];
 export interface Track {
     id: number;
     description: string;
+    year: number;
+    sampling: number;
     timestamp: number;
     coordinates: Coordinates[];
-    // TODO : could save some space by using seconds instead of millis
-    coordinateTimes: number[];
-}
-
-// Can't use an enum since I don't know the other types
-/** @Deprecated */
-export const TYPE_RUN = 9;
-
-/** @Deprecated */
-export interface LegacyTrackProperties {
-    description: string;
-    type: number;
-    timestamps: number[];
-}
-
-/** @Deprecated */
-export interface LegacyTrackFeature extends GeoJSON.Feature<GeoJSON.LineString, LegacyTrackProperties> {
-    id: number;
+    coordinateSeconds: number[];
 }
 
 export interface TrackProperties {}
