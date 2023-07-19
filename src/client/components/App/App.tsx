@@ -3,7 +3,7 @@ import LoadingOverlay from '@src/client/components/LoadingOverlay';
 import Map from '@src/client/components/Map';
 import { useTicker } from '@src/client/hooks/useTicker';
 import { formatDuration } from '@src/client/utils/formatTime';
-import { loadFromGpxData } from '@src/client/utils/gpxConverter';
+import { convertFromGpxData } from '@src/client/utils/gpxConverter';
 import { sampleTrack } from '@src/shared/convert';
 import { RawDataView, Track } from '@src/shared/types';
 import React from 'react';
@@ -187,7 +187,12 @@ async function saveToServer(track: Track): Promise<Track> {
 function readGpxFile(file: File): Promise<Track[]> {
     if (file.name.endsWith('.gpx')) {
         return file.text().then((txt) => {
-            return loadFromGpxData(file.name, txt);
+            const track = convertFromGpxData(file.name, txt);
+            if (track) {
+                return [track];
+            } else {
+                return [];
+            }
         });
     } else {
         return Promise.resolve([]);

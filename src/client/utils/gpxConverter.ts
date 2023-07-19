@@ -1,21 +1,18 @@
 import { Track } from '@src/shared/types';
 
-const TYPE_RUN = 9;
-
-// TODO : why is this returning a Promise?
-export function loadFromGpxData(fileName: string, data: string): Promise<Track[]> {
+export function convertFromGpxData(fileName: string, data: string): Track | null {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(data, 'text/xml');
     const rootElement = xmlDoc.getElementsByTagName('gpx')[0];
     const trackElement = rootElement.getElementsByTagName('trk')[0];
-    const typeId = +getChildElementValue(trackElement, 'type');
+    const typeId = getChildElementValue(trackElement, 'type');
     const description = getChildElementValue(trackElement, 'name');
 
     const pointElements = trackElement
         .getElementsByTagName('trkseg')[0]
         .getElementsByTagName('trkpt');
 
-    if (typeId === TYPE_RUN) {
+    if (typeId === '9' || typeId === 'running') {
         const timestamps = Array.from(pointElements).map((e) => {
             const dateString = getChildElementValue(e, 'time');
             return new Date(dateString).getTime();
@@ -34,10 +31,10 @@ export function loadFromGpxData(fileName: string, data: string): Promise<Track[]
             }),
             coordinateSeconds: timestamps.map((t) => (t - timestamps[0]) / 1000)
         };
-        return Promise.resolve([track]);
+        return track;
     } else {
         console.warn(`Skipping non-run in ${fileName}: ${description}`);
-        return Promise.resolve([]);
+        return null;
     }
 }
 
